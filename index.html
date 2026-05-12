@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEalthieR · 围绝经期女性 AI 健康陪伴</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f0ebe3;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',sans-serif}
+:root{--br:#F39A8E;--brd:#e07e70;--brlt:#fde8e3;--ac:#7DA06C;--tx:#3C2D26;--sf:#FDFBF7;--warn:#e8a040;--danger:#c05050}
+
+/* ═══════ SHARED ═══════ */
+@keyframes fadeup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.phone{width:360px;max-height:780px;background:var(--sf);border-radius:44px;border:3px solid #e4ddd4;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.12);display:flex;flex-direction:column}
+.sb{height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 22px 7px;font-size:11px;color:var(--tx);opacity:.38;flex-shrink:0}
+.phone-body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.phone-body::-webkit-scrollbar{display:none}
+.page{display:none;animation:fadeup .25s ease}
+.page.on{display:block}
+.bnav{height:56px;border-top:1px solid #ece6de;display:flex;align-items:center;justify-content:space-around;background:var(--sf);flex-shrink:0}
+.ni{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--tx);opacity:.32;cursor:pointer;padding:4px 10px;transition:opacity .15s;letter-spacing:.01em;user-select:none}
+.ni.on{color:var(--brd);opacity:1}
+.ni svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* ═══════ COACH PAGE ═══════ */
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes bob-speak{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes ripple-coach{0%{transform:scale(1);opacity:.45}100%{transform:scale(2.6);opacity:0}}
+@keyframes wave{0%,100%{height:var(--lo,4px)}50%{height:var(--hi,22px)}}
+@keyframes pulse-ring-coach{0%,100%{box-shadow:0 0 0 0 rgba(243,154,142,.38)}60%{box-shadow:0 0 0 22px rgba(243,154,142,0)}}
+@keyframes tdot{0%,80%,100%{opacity:.18}40%{opacity:1}}
+.scene-pills{display:flex;gap:6px;padding:10px 18px 2px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.scene-pills::-webkit-scrollbar{display:none}
+.pill{flex-shrink:0;padding:5px 13px;border-radius:18px;font-size:12px;color:var(--tx);opacity:.46;border:1px solid #ddd7cd;cursor:pointer;transition:all .16s;user-select:none}
+.pill.on{background:var(--brlt);color:var(--brd);border-color:var(--br);opacity:1;font-weight:500}
+.stage{height:200px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8px;position:relative;overflow:hidden;background:var(--sf);flex-shrink:0}
+.sdeco{position:absolute;inset:0;pointer-events:none}
+.char{position:relative;z-index:2;animation:bob 3.5s ease-in-out infinite}
+.char.spk{animation:bob-speak .7s ease-in-out infinite}
+.char.lst{animation:bob 2s ease-in-out infinite}
+.rring-wrap{position:absolute;width:80px;height:80px;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;display:none}
+.rring{position:absolute;inset:0;border-radius:50%;border:1.8px solid var(--br);animation:ripple-coach 1.4s ease-out infinite}
+.rring:nth-child(2){animation-delay:.47s}.rring:nth-child(3){animation-delay:.94s}
+.greeting{padding:14px 24px 4px;text-align:center}
+.gname{font-size:12.5px;color:var(--brd);font-weight:500;letter-spacing:.04em;margin-bottom:4px}
+.gtitle{font-size:21px;font-weight:700;color:var(--tx);line-height:1.38;letter-spacing:-.01em}
+.gsub{font-size:12.5px;color:var(--tx);opacity:.4;margin-top:4px}
+.bubble-area{min-height:62px;padding:6px 18px 2px;animation:fadeup .28s ease}
+.bubble{background:white;border:1px solid #ece6de;border-radius:18px;padding:11px 15px}
+.bname{font-size:10px;color:var(--brd);font-weight:600;letter-spacing:.06em;margin-bottom:3px}
+.btext{font-size:12.5px;color:var(--tx);line-height:1.65;opacity:.88}
+.tdot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#c8bdb5;margin:0 2px;animation:tdot .85s ease-in-out infinite}
+.tdot:nth-child(2){animation-delay:.18s}.tdot:nth-child(3){animation-delay:.36s}
+.topic-row{display:flex;gap:6px;padding:6px 18px 4px;overflow-x:auto;scrollbar-width:none}
+.topic-row::-webkit-scrollbar{display:none}
+.tchip{flex-shrink:0;padding:7px 13px;border-radius:13px;font-size:11.5px;color:var(--tx);opacity:.6;border:1px solid #ddd7cd;background:var(--sf);cursor:pointer;white-space:nowrap;transition:all .15s;user-select:none}
+.tchip:active{border-color:var(--br);color:var(--brd);opacity:1;background:var(--brlt)}
+.mic-area{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 12px}
+.wave-row{height:28px;display:flex;align-items:center;gap:3px;opacity:0;transition:opacity .2s}
+.wave-row.on{opacity:1}
+.wbar{width:4px;border-radius:3px;background:var(--br);animation:wave .52s ease-in-out infinite}
+.mic-big{width:120px;height:120px;border-radius:50%;background:var(--br);border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:white;transition:transform .14s,background .14s;-webkit-tap-highlight-color:transparent;user-select:none}
+.mic-big:active,.mic-big.on{transform:scale(.93);background:var(--brd);animation:pulse-ring-coach 1.1s ease-in-out infinite}
+.mic-big svg{width:40px;height:40px;stroke:white;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.mic-big-lbl{font-size:13px;letter-spacing:.03em}
+.hist{display:flex;align-items:center;justify-content:center;gap:6px;padding:0 0 14px;font-size:12px;color:var(--tx);opacity:.35;cursor:pointer}
+.hist svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* ═══════ SHARED CARDS ═══════ */
+.sec-title{font-size:15px;font-weight:600;color:var(--tx);padding:14px 18px 8px}
+.card{background:white;border:1px solid #ece6de;border-radius:16px;margin:0 18px 10px;padding:14px 16px}
+.tag{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:500}
+.tag-g{background:#eaf4e7;color:#4a7a3a}
+.tag-r{background:#fde8e3;color:#c06850}
+.tag-b{background:#e8f0fd;color:#3a5ca0}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:70px;margin-bottom:6px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.bar-fill{width:100%;border-radius:5px 5px 0 0;background:var(--br);opacity:.7}
+.bar-day{font-size:10px;color:var(--tx);opacity:.38}
+.plan-item{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #f0ebe3}
+.plan-item:last-child{border-bottom:none}
+.plan-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.plan-info{flex:1}
+.plan-name{font-size:13px;font-weight:500;color:var(--tx);margin-bottom:1px}
+.plan-sub{font-size:11px;color:var(--tx);opacity:.42}
+.plan-time{font-size:11px;color:var(--tx);opacity:.35}
+.avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:white;flex-shrink:0}
+.menu-item{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #f5f0ea;cursor:pointer}
+.menu-item:last-child{border-bottom:none}
+.menu-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.menu-icon svg{width:17px;height:17px;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.menu-text{flex:1;font-size:13px;color:var(--tx)}
+.menu-arr{width:15px;height:15px;stroke:var(--tx);opacity:.25;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.profile-avatar{width:68px;height:68px;border-radius:50%;background:var(--br);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:white}
+
+/* ═══════ BOND PET SYSTEM ═══════ */
+@keyframes bob-pet{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes pet-wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+@keyframes float-up{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-55px) scale(1.3)}}
+@keyframes sparkle-pet{0%,100%{opacity:0}50%{opacity:1}}
+@keyframes pulse-ring-pet{0%{box-shadow:0 0 0 0 rgba(125,160,108,.4)}100%{box-shadow:0 0 0 14px rgba(125,160,108,0)}}
+@keyframes hungry-shake{0%,100%{transform:translateX(0)}10%{transform:translateX(-3px)}20%{transform:translateX(3px)}30%{transform:translateX(-2px)}40%{transform:translateX(2px)}50%,100%{transform:translateX(0)}}
+@keyframes reward-pop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes drip{0%{transform:translateY(0);opacity:1}100%{transform:translateY(10px);opacity:0}}
+.pair-card{margin:0 18px 10px;border:1px solid #ece6de;border-radius:16px;overflow:hidden;background:white}
+.bond-header{background:linear-gradient(135deg,#fde8e3 0%,#fdf6f3 100%);padding:14px 16px 18px;text-align:center}
+.bond-header .bond-icon{font-size:32px;margin-bottom:4px}
+.bond-header .bond-title{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.bond-header .bond-sub{font-size:11px;color:var(--tx);opacity:.45}
+.pet-room{width:calc(100% - 36px);height:170px;margin:10px 18px 0;position:relative;display:flex;align-items:flex-end;justify-content:center;background:radial-gradient(ellipse at 50% 80%,rgba(243,154,142,.07) 0%,transparent 70%);border-radius:20px;overflow:visible}
+.pet-floor{position:absolute;bottom:0;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,rgba(224,126,112,.2),transparent);border-radius:50%}
+.pet-container{position:relative;z-index:2;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:transform .12s}
+.pet-container:active{transform:scale(.94)}
+.pet-container.happy{animation:bob-pet 2.5s ease-in-out infinite}
+.pet-container.hungry{animation:hungry-shake .8s ease-in-out infinite}
+.pet-container.sick{animation:none;opacity:.7}
+.pet-emoji{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:14px;animation:float-up 1.4s ease-out forwards;pointer-events:none;z-index:10}
+.hp-wrap{display:flex;align-items:center;gap:7px;margin:8px 18px 2px}
+.hp-label{font-size:10px;color:var(--tx);opacity:.5;white-space:nowrap}
+.hp-bar-outer{flex:1;height:7px;border-radius:10px;background:#ece6de;overflow:hidden}
+.hp-bar-inner{height:100%;border-radius:10px;transition:width .6s cubic-bezier(.4,0,.2,1),background .4s;background:var(--ac)}
+.hp-bar-inner.warning{background:var(--warn)}
+.hp-bar-inner.danger{background:var(--danger)}
+.hp-num{font-size:10px;font-weight:600;color:var(--tx);min-width:34px;text-align:right}
+.hp-status{font-size:10px;color:var(--tx);opacity:.5;text-align:center;margin-bottom:2px;min-height:15px}
+.pet-info-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 18px 8px}
+.pet-name{font-size:14px;font-weight:700;color:var(--tx)}
+.pet-bond-lvl{font-size:9px;padding:3px 8px;border-radius:7px;background:var(--brlt);color:var(--brd);font-weight:500}
+.action-row{display:flex;gap:8px;margin:0 18px 10px}
+.btn-pet{flex:1;padding:9px 0;border-radius:12px;border:none;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;gap:4px}
+.btn-feed{background:var(--brlt);color:var(--brd)}
+.btn-feed:active{background:var(--br);color:white}
+.btn-play{background:#eaf4e7;color:#4a7a3a}
+.btn-play:active{background:var(--ac);color:white}
+.btn-pet:disabled{opacity:.3;pointer-events:none}
+.inv-row{display:flex;gap:6px;padding:0 18px 8px;overflow-x:auto;scrollbar-width:none}
+.inv-row::-webkit-scrollbar{display:none}
+.inv-item{flex-shrink:0;width:50px;height:50px;border-radius:12px;background:white;border:1px solid #ece6de;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;position:relative}
+.inv-item .inv-count{position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--ac);color:white;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.inv-item .inv-empty{opacity:.25}
+.inv-count-label{font-size:9px;color:var(--tx);opacity:.4;text-align:center;margin-top:1px;min-width:50px}
+.task-card{background:white;border:1px solid #ece6de;border-radius:14px;padding:12px 14px;margin:0 18px 8px;transition:all .25s}
+.task-card.done{border-color:var(--ac);background:#f8fbf6}
+.task-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.avatar-sm{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:white;flex-shrink:0}
+.task-info{flex:1}
+.task-name{font-size:12.5px;font-weight:500;color:var(--tx);margin-bottom:1px}
+.task-sub{font-size:10.5px;color:var(--tx);opacity:.4}
+.task-check{width:26px;height:26px;border-radius:50%;border:2px solid #ddd7cd;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent}
+.task-check.done{border-color:var(--ac);background:var(--ac);animation:pulse-ring-pet .6s ease-out}
+.task-check svg{width:12px;height:12px;opacity:0;transition:opacity .2s}
+.task-check.done svg{opacity:1}
+.task-check svg polyline{stroke:white;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.task-body{font-size:11px;color:var(--tx);opacity:.6;line-height:1.65;padding:8px 0 0;border-top:1px solid #f5f0ea;margin-top:4px;display:none}
+.task-card.done .task-body{display:block}
+.task-body strong{color:var(--brd);font-weight:500}
+.ex-detail{background:var(--brlt);border-radius:12px;padding:10px 12px;margin-top:6px;font-size:11px;color:var(--tx);line-height:1.7}
+.ex-tag{display:inline-block;padding:2px 7px;border-radius:5px;font-size:9px;margin-right:3px;font-weight:500}
+.ex-tag.warm{background:var(--br);color:white}
+.ex-tag.safe{background:var(--ac);color:white}
+.ex-tag.mood{background:#d4c4e0;color:#5a3a7a}
+.tips-card{background:linear-gradient(135deg,#fdf6f3 0%,#f8f0ea 100%);border:1px solid #f0e0d8;border-radius:14px;padding:12px 14px;margin:0 18px 10px}
+.tips-hd{font-size:11.5px;font-weight:600;color:var(--brd);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.tips-body{font-size:11px;color:var(--tx);opacity:.7;line-height:1.75}
+.log-area{margin:0 18px 10px;background:white;border:1px solid #ece6de;border-radius:14px;overflow:hidden;max-height:120px;overflow-y:auto}
+.log-item{padding:8px 12px;border-bottom:1px solid #f5f0ea;font-size:11px;color:var(--tx);display:flex;align-items:center;gap:7px}
+.log-item:last-child{border-bottom:none}
+.log-time{font-size:9px;color:var(--tx);opacity:.3;white-space:nowrap}
+.log-emoji{font-size:14px;flex-shrink:0}
+.log-text{flex:1;line-height:1.5;opacity:.7}
+.reward-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:18px;padding:18px 26px;z-index:100;box-shadow:0 10px 36px rgba(0,0,0,.16);text-align:center;animation:reward-pop .4s cubic-bezier(.18,.89,.32,1.27);pointer-events:none}
+.reward-toast .reward-icon{font-size:42px;margin-bottom:6px}
+.reward-toast .reward-text{font-size:14px;font-weight:600;color:var(--tx);margin-bottom:3px}
+.reward-toast .reward-sub{font-size:11px;color:var(--tx);opacity:.5}
+.pet-svg .pet-blush{transition:opacity .4s}
+.pet-svg .pet-tear{display:none}
+.pet-svg.sick .pet-tear{display:block;animation:drip 1.2s ease-in infinite}
+.pet-svg .pet-mouth-sad,.pet-svg .pet-mouth-neutral{display:none}
+.pet-svg.sick .pet-mouth-happy,.pet-svg.sick .pet-mouth-neutral{display:none}
+.pet-svg.sick .pet-mouth-sad{display:block}
+.pet-svg.hungry .pet-mouth-happy{display:none}
+.pet-svg.hungry .pet-mouth-neutral{display:block}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="sb">
+    <span>9:41</span>
+    <span style="font-size:12px;font-weight:600;opacity:.55;letter-spacing:.04em">HEalthieR</span>
+    <span>100%</span>
+  </div>
+
+  <div class="phone-body">
+
+  <!-- ═══════════ 陪伴页 ═══════════ -->
+  <div class="page on" id="pg-coach">
+    <div class="scene-pills">
+      <div class="pill on" onclick="setScene('move',this)">今日运动</div>
+      <div class="pill" onclick="setScene('eat',this)">营养补给</div>
+      <div class="pill" onclick="setScene('mind',this)">情绪能量</div>
+      <div class="pill" onclick="setScene('supp',this)">补剂时间</div>
+    </div>
+    <div class="stage" id="stage">
+      <svg class="sdeco" id="sbg" width="360" height="200" viewBox="0 0 360 200">
+        <g id="bg-move">
+          <rect width="360" height="200" fill="#fdf6f3"/>
+          <rect x="0" y="172" width="360" height="28" fill="#fde8e3" opacity=".45"/>
+          <rect x="22" y="105" width="10" height="65" rx="3" fill="#F39A8E" opacity=".25"/>
+          <rect x="13" y="100" width="28" height="7" rx="3" fill="#F39A8E" opacity=".32"/>
+          <rect x="328" y="105" width="10" height="65" rx="3" fill="#F39A8E" opacity=".25"/>
+          <rect x="319" y="100" width="28" height="7" rx="3" fill="#F39A8E" opacity=".32"/>
+          <ellipse cx="180" cy="182" rx="120" ry="8" fill="#F39A8E" opacity=".1"/>
+          <text font-family="sans-serif" font-size="9" fill="#e07e70" opacity=".4" x="248" y="140">重量训练</text>
+          <text font-family="sans-serif" font-size="9" fill="#e07e70" opacity=".4" x="62" y="100">SIT 冲刺</text>
+        </g>
+        <g id="bg-eat" style="display:none">
+          <rect width="360" height="200" fill="#f4fbf7"/>
+          <circle cx="90" cy="140" r="24" fill="#7DA06C" opacity=".18"/>
+          <circle cx="180" cy="128" r="17" fill="#7DA06C" opacity=".13"/>
+          <circle cx="270" cy="142" r="22" fill="#7DA06C" opacity=".16"/>
+          <text font-family="sans-serif" font-size="9" fill="#4a7a3a" opacity=".42" x="48" y="96">30-40g 蛋白质</text>
+          <text font-family="sans-serif" font-size="9" fill="#4a7a3a" opacity=".42" x="220" y="96">亮氨酸触发</text>
+        </g>
+        <g id="bg-mind" style="display:none">
+          <rect width="360" height="200" fill="#fdf8fb"/>
+          <circle cx="50" cy="62" r="32" fill="#F39A8E" opacity=".09"/>
+          <circle cx="310" cy="74" r="24" fill="#F39A8E" opacity=".07"/>
+          <text font-family="sans-serif" font-size="9" fill="#c06878" opacity=".38" x="48" y="156">皮质醇管理</text>
+          <text font-family="sans-serif" font-size="9" fill="#c06878" opacity=".38" x="220" y="110">情绪日记</text>
+        </g>
+        <g id="bg-supp" style="display:none">
+          <rect width="360" height="200" fill="#f8f7fd"/>
+          <circle cx="50" cy="68" r="30" fill="#a89fdc" opacity=".09"/>
+          <rect x="276" y="120" width="50" height="26" rx="10" fill="#a89fdc" opacity=".16"/>
+          <text font-family="sans-serif" font-size="9" fill="#5248a0" opacity=".38" x="40" y="156">肌酸 5g / 日</text>
+          <text font-family="sans-serif" font-size="9" fill="#5248a0" opacity=".38" x="210" y="102">维D3 + K2</text>
+        </g>
+      </svg>
+      <div class="rring-wrap" id="rrings"><div class="rring"></div><div class="rring"></div><div class="rring"></div></div>
+      <div class="char" id="char">
+        <svg width="90" height="136" viewBox="0 0 88 140">
+          <ellipse cx="44" cy="33" rx="25" ry="17" fill="#3C2D26"/>
+          <ellipse cx="22" cy="49" rx="8.5" ry="19" fill="#3C2D26"/>
+          <ellipse cx="66" cy="49" rx="8.5" ry="19" fill="#3C2D26"/>
+          <ellipse cx="36" cy="25" rx="6" ry="3" fill="#5a3f30" opacity=".5"/>
+          <ellipse cx="44" cy="55" rx="23" ry="25" fill="#FAEEDA"/>
+          <ellipse id="EL" cx="36" cy="51" rx="4.2" ry="5" fill="#3C2D26"/>
+          <ellipse id="ER" cx="52" cy="51" rx="4.2" ry="5" fill="#3C2D26"/>
+          <ellipse cx="37" cy="49" rx="1.6" ry="1.6" fill="white"/>
+          <ellipse cx="53" cy="49" rx="1.6" ry="1.6" fill="white"/>
+          <path d="M31 45 Q36 42 41 45" fill="none" stroke="#3C2D26" stroke-width="1.3" stroke-linecap="round"/>
+          <path d="M47 45 Q52 42 57 45" fill="none" stroke="#3C2D26" stroke-width="1.3" stroke-linecap="round"/>
+          <circle cx="44" cy="59" r="1.1" fill="#e8c8a0" opacity=".7"/>
+          <path id="MOUTH" d="M37 66 Q44 72 51 66" fill="none" stroke="#F39A8E" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="29" cy="61" rx="7" ry="5" fill="#F39A8E" opacity=".35"/>
+          <ellipse cx="59" cy="61" rx="7" ry="5" fill="#F39A8E" opacity=".35"/>
+          <rect x="18" y="79" width="52" height="53" rx="14" fill="white"/>
+          <rect x="18" y="79" width="52" height="53" rx="14" fill="none" stroke="#ede8e0" stroke-width=".8"/>
+          <path d="M29 79 L44 94 L59 79" fill="none" stroke="#ede8e0" stroke-width="1" stroke-linecap="round"/>
+          <path d="M29 79 L44 94 L59 79 Q53 81 44 83 Q35 81 29 79Z" fill="#fde8e3"/>
+          <rect x="48" y="93" width="15" height="10" rx="3" fill="none" stroke="#ede8e0" stroke-width=".7"/>
+          <rect x="4" y="83" width="16" height="10" rx="5" fill="white" stroke="#ede8e0" stroke-width=".8"/>
+          <rect x="68" y="83" width="16" height="10" rx="5" fill="white" stroke="#ede8e0" stroke-width=".8"/>
+          <rect x="26" y="128" width="13" height="10" rx="5" fill="#7DA06C"/>
+          <rect x="49" y="128" width="13" height="10" rx="5" fill="#7DA06C"/>
+        </svg>
+      </div>
+    </div>
+    <div class="greeting" id="greeting">
+      <div class="gname">Dr. Stacy</div>
+      <div class="gtitle">今天可以做些什么<br>点亮你的生活？</div>
+      <div class="gsub">跟我说说，让我来陪你</div>
+    </div>
+    <div class="bubble-area" id="bubble-area" style="display:none">
+      <div class="bubble"><div class="bname">DR. STACY</div><div class="btext" id="btext"></div></div>
+    </div>
+    <div class="topic-row">
+      <div class="tchip" onclick="ask(0)">今天练什么？</div>
+      <div class="tchip" onclick="ask(1)">我感觉疲惫</div>
+      <div class="tchip" onclick="ask(2)">训练后吃什么？</div>
+      <div class="tchip" onclick="ask(3)">心情低落</div>
+      <div class="tchip" onclick="ask(4)">补剂怎么吃？</div>
+    </div>
+    <div class="mic-area">
+      <div class="wave-row" id="wrow">
+        <div class="wbar" style="--lo:3px;--hi:8px;height:3px;animation-delay:0s"></div>
+        <div class="wbar" style="--lo:5px;--hi:16px;height:8px;animation-delay:.07s"></div>
+        <div class="wbar" style="--lo:8px;--hi:24px;height:14px;animation-delay:.14s"></div>
+        <div class="wbar" style="--lo:10px;--hi:28px;height:20px;animation-delay:.21s"></div>
+        <div class="wbar" style="--lo:8px;--hi:22px;height:18px;animation-delay:.28s"></div>
+        <div class="wbar" style="--lo:5px;--hi:14px;height:10px;animation-delay:.35s"></div>
+        <div class="wbar" style="--lo:3px;--hi:7px;height:4px;animation-delay:.42s"></div>
+      </div>
+      <button class="mic-big" id="mbtn"
+        onmousedown="startL()" onmouseup="stopL()"
+        ontouchstart="startL()" ontouchend="stopL()">
+        <svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+        <span class="mic-big-lbl" id="mlbl">点击说话</span>
+      </button>
+    </div>
+    <div class="hist">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+      过往健康记录
+    </div>
+  </div>
+
+  <!-- ═══════════ 报告页 ═══════════ -->
+  <div class="page" id="pg-report">
+    <div class="sec-title">健康报告</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 18px 10px">
+      <div class="card" style="margin:0"><div style="font-size:11px;color:var(--tx);opacity:.45">本周训练</div><div style="margin-top:3px"><span style="font-size:20px;font-weight:700;color:var(--tx)">4</span><span style="font-size:11px;color:var(--tx);opacity:.45;margin-left:2px">次</span></div><div style="margin-top:5px"><span class="tag tag-g">达标</span></div></div>
+      <div class="card" style="margin:0"><div style="font-size:11px;color:var(--tx);opacity:.45">蛋白质达标</div><div style="margin-top:3px"><span style="font-size:20px;font-weight:700;color:var(--tx)">86</span><span style="font-size:11px;color:var(--tx);opacity:.45;margin-left:2px">%</span></div><div style="margin-top:5px"><span class="tag tag-g">优秀</span></div></div>
+      <div class="card" style="margin:0"><div style="font-size:11px;color:var(--tx);opacity:.45">平均睡眠</div><div style="margin-top:3px"><span style="font-size:20px;font-weight:700;color:var(--tx)">6.8</span><span style="font-size:11px;color:var(--tx);opacity:.45;margin-left:2px">h</span></div><div style="margin-top:5px"><span class="tag tag-r">偏低</span></div></div>
+      <div class="card" style="margin:0"><div style="font-size:11px;color:var(--tx);opacity:.45">情绪评分</div><div style="margin-top:3px"><span style="font-size:20px;font-weight:700;color:var(--tx)">7.2</span><span style="font-size:11px;color:var(--tx);opacity:.45;margin-left:2px">/10</span></div><div style="margin-top:5px"><span class="tag tag-b">稳定</span></div></div>
+    </div>
+    <div class="card"><div style="font-size:11px;color:var(--tx);opacity:.45;margin-bottom:8px">本周运动强度</div><div class="bar-chart"><div class="bar-col"><div class="bar-fill" style="height:34px"></div><div class="bar-day">一</div></div><div class="bar-col"><div class="bar-fill" style="height:56px;background:#7DA06C"></div><div class="bar-day">二</div></div><div class="bar-col"><div class="bar-fill" style="height:18px;opacity:.3"></div><div class="bar-day">三</div></div><div class="bar-col"><div class="bar-fill" style="height:66px;opacity:1"></div><div class="bar-day">四</div></div><div class="bar-col"><div class="bar-fill" style="height:46px;background:#7DA06C"></div><div class="bar-day">五</div></div><div class="bar-col"><div class="bar-fill" style="height:14px;opacity:.3"></div><div class="bar-day">六</div></div><div class="bar-col"><div class="bar-fill" style="height:7px;opacity:.2"></div><div class="bar-day">日</div></div></div></div>
+    <div class="card"><div style="font-size:11px;color:var(--tx);opacity:.45;margin-bottom:6px">Dr. Stacy 本周小结</div><div style="font-size:12px;color:#3C2D26;line-height:1.65;opacity:.82">本周训练质量不错！睡眠时长略偏低，建议晚餐后减少咖啡因，睡前补充镁有助于放松。继续保持蛋白质的好习惯。</div></div>
+  </div>
+
+  <!-- ═══════════ 计划页 ═══════════ -->
+  <div class="page" id="pg-plan">
+    <div class="sec-title">本周计划</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="plan-item"><div class="plan-dot" style="background:#7DA06C"></div><div class="plan-info"><div class="plan-name">大重量深蹲 + 硬拉</div><div class="plan-sub">3组 × 5次 · 85% 1RM</div></div><div class="plan-time">周一</div></div>
+      <div class="plan-item"><div class="plan-dot" style="background:#F39A8E"></div><div class="plan-info"><div class="plan-name">SIT 短间歇冲刺</div><div class="plan-sub">30秒冲 × 5组 · 动感单车</div></div><div class="plan-time">周三</div></div>
+      <div class="plan-item"><div class="plan-dot" style="background:#7DA06C"></div><div class="plan-info"><div class="plan-name">上肢推拉 + 核心</div><div class="plan-sub">卧推·划船·平板支撑</div></div><div class="plan-time">周五</div></div>
+      <div class="plan-item"><div class="plan-dot" style="background:#e0d5c5"></div><div class="plan-info"><div class="plan-name">多向跳跃 + 拉伸</div><div class="plan-sub">骨密度维护 · 15分钟</div></div><div class="plan-time">周六</div></div>
+    </div>
+    <div class="sec-title" style="padding-top:4px">营养计划</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="plan-item"><div class="plan-dot" style="background:#F39A8E"></div><div class="plan-info"><div class="plan-name">训练后蛋白质窗口</div><div class="plan-sub">乳清蛋白 30-40g · 45分钟内</div></div><div class="plan-time">每训练日</div></div>
+      <div class="plan-item"><div class="plan-dot" style="background:#7DA06C"></div><div class="plan-info"><div class="plan-name">晚餐补充镁</div><div class="plan-sub">甘氨酸镁 200mg · 助睡眠</div></div><div class="plan-time">每晚</div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 母女页 ═══════════ -->
+  <div class="page" id="pg-bond">
+    <!-- Bond Header -->
+    <div class="pair-card">
+      <div style="padding:12px 16px;border-bottom:1px solid #f0ebe3">
+        <div style="font-size:11px;color:var(--tx);opacity:.42;margin-bottom:6px">已绑定</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="avatar" style="background:#F39A8E">妈</div>
+          <svg width="14" height="14" viewBox="0 0 24 24" style="flex-shrink:0;opacity:.28" fill="#F39A8E" stroke="#F39A8E" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <div class="avatar" style="background:#7DA06C">女</div>
+          <div style="margin-left:4px"><div style="font-size:13px;font-weight:500;color:#3C2D26">李秀芳 &amp; 李小花</div><div style="font-size:10.5px;color:#3C2D26;opacity:.4;margin-top:1px">绑定于 2024.06.01</div></div>
+        </div>
+      </div>
+      <div style="padding:10px 16px">
+        <div style="font-size:11px;color:var(--tx);opacity:.42;margin-bottom:6px">本周共同打卡</div>
+        <div style="display:flex;gap:6px">
+          <div style="flex:1;text-align:center;background:#fde8e3;border-radius:9px;padding:7px 0"><div style="font-size:17px;font-weight:700;color:#e07e70">4</div><div style="font-size:10px;color:#e07e70;opacity:.8">妈妈</div></div>
+          <div style="flex:1;text-align:center;background:#eaf4e7;border-radius:9px;padding:7px 0"><div style="font-size:17px;font-weight:700;color:#4a7a3a">5</div><div style="font-size:10px;color:#4a7a3a;opacity:.8">小花</div></div>
+          <div style="flex:1;text-align:center;background:#f0ebe3;border-radius:9px;padding:7px 0"><div style="font-size:17px;font-weight:700;color:#8a7a6a">9</div><div style="font-size:10px;color:#8a7a6a;opacity:.8">合计</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pet Zone -->
+    <div class="bond-header">
+      <div class="bond-icon">🌸</div>
+      <div class="bond-title">一起养育 · 暖暖</div>
+      <div class="bond-sub">母女共同运动，暖暖就会健康成长</div>
+    </div>
+    <div class="pet-room" id="petRoom">
+      <div class="pet-floor"></div>
+      <div class="pet-container happy" id="petContainer" onclick="petPet()">
+        <svg class="pet-svg" id="petSvg" width="92" height="108" viewBox="0 0 100 120">
+          <ellipse cx="50" cy="72" rx="36" ry="32" fill="#f8d8b8"/>
+          <ellipse cx="50" cy="72" rx="36" ry="32" fill="url(#petGrad)" opacity=".4"/>
+          <defs><radialGradient id="petGrad" cx="35%" cy="30%"><stop offset="0%" stop-color="white" stop-opacity=".6"/><stop offset="100%" stop-color="transparent"/></radialGradient></defs>
+          <ellipse cx="20" cy="45" rx="11" ry="15" fill="#f8d8b8" transform="rotate(-15,20,45)"/>
+          <ellipse cx="20" cy="45" rx="7" ry="10" fill="#f5c8a0" transform="rotate(-15,20,45)"/>
+          <ellipse cx="80" cy="45" rx="11" ry="15" fill="#f8d8b8" transform="rotate(15,80,45)"/>
+          <ellipse cx="80" cy="45" rx="7" ry="10" fill="#f5c8a0" transform="rotate(15,80,45)"/>
+          <ellipse cx="36" cy="62" rx="6.5" ry="7.5" fill="white"/>
+          <ellipse cx="64" cy="62" rx="6.5" ry="7.5" fill="white"/>
+          <ellipse cx="38" cy="63" rx="4.2" ry="4.8" fill="#3C2D26"/>
+          <ellipse cx="66" cy="63" rx="4.2" ry="4.8" fill="#3C2D26"/>
+          <circle cx="40" cy="60" r="1.8" fill="white"/>
+          <circle cx="68" cy="60" r="1.8" fill="white"/>
+          <ellipse class="pet-blush" cx="25" cy="70" rx="6.5" ry="3.5" fill="#F39A8E" opacity=".3"/>
+          <ellipse class="pet-blush" cx="75" cy="70" rx="6.5" ry="3.5" fill="#F39A8E" opacity=".3"/>
+          <path class="pet-mouth-happy" d="M40 78 Q50 87 60 78" fill="none" stroke="#3C2D26" stroke-width="2" stroke-linecap="round"/>
+          <path class="pet-mouth-neutral" d="M42 80 L58 80" fill="none" stroke="#3C2D26" stroke-width="2" stroke-linecap="round"/>
+          <path class="pet-mouth-sad" d="M40 83 Q50 76 60 83" fill="none" stroke="#3C2D26" stroke-width="2" stroke-linecap="round"/>
+          <ellipse class="pet-tear" cx="28" cy="76" rx="1.8" ry="2.8" fill="#8cc8e8"/>
+          <ellipse cx="32" cy="104" rx="11" ry="6" fill="#f8d8b8"/>
+          <ellipse cx="68" cy="104" rx="11" ry="6" fill="#f8d8b8"/>
+          <ellipse cx="84" cy="55" rx="7" ry="4.5" fill="#f8d8b8" transform="rotate(20,84,55)"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="hp-wrap">
+      <span class="hp-label">❤️</span>
+      <div class="hp-bar-outer"><div class="hp-bar-inner" id="hpBar" style="width:100%"></div></div>
+      <span class="hp-num" id="hpNum">100/100</span>
+    </div>
+    <div class="hp-status" id="hpStatus">暖暖现在很开心 ✨</div>
+
+    <div class="pet-info-row">
+      <span class="pet-name">暖暖</span>
+      <span class="pet-bond-lvl" id="bondLvl">亲密 Lv.1</span>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-pet btn-feed" id="btnFeed" onclick="feedPet()" disabled>🍎 喂食</button>
+      <button class="btn-pet btn-play" id="btnPlay" onclick="playPet()" disabled>🎾 玩耍</button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:6px;padding:0 18px 4px">
+      <span style="font-size:10px;color:var(--tx);opacity:.4">🎒 仓库</span>
+      <div class="inv-row" style="padding:0;margin:0;flex:1;justify-content:flex-start">
+        <div class="inv-item" id="inv-food">🍎<span class="inv-count" id="foodCount">0</span></div><span class="inv-count-label" id="foodLabel">食物</span>
+        <div class="inv-item" id="inv-toy" style="margin-left:12px">🎾<span class="inv-count" id="toyCount">0</span></div><span class="inv-count-label" id="toyLabel">玩具</span>
+      </div>
+    </div>
+
+    <!-- Shared Tasks -->
+    <div style="font-size:12px;font-weight:600;color:var(--tx);padding:12px 18px 6px;display:flex;align-items:center;gap:5px">
+      🤝 今日共同任务
+      <span style="font-size:10px;font-weight:400;opacity:.45">母女各完成一项</span>
+    </div>
+    <div id="taskList"></div>
+
+    <!-- Menopause Tips -->
+    <div class="tips-card">
+      <div class="tips-hd">💡 给妈妈的贴心建议</div>
+      <div class="tips-body" id="tipsBody">更年期运动重在<span style="color:var(--brd);font-weight:500">持续而非强度</span>。每天20-30分钟的低冲击运动，比一次高强度更保护关节和骨骼。</div>
+    </div>
+
+    <!-- Activity Log -->
+    <div style="font-size:12px;font-weight:600;color:var(--tx);padding:2px 18px 6px">📋 暖暖日记</div>
+    <div class="log-area" id="logArea">
+      <div class="log-item"><span class="log-emoji">🏠</span><span class="log-text">暖暖来到这个家，等你们一起照顾它</span><span class="log-time">刚刚</span></div>
+    </div>
+    <div style="height:12px"></div>
+  </div>
+
+  <!-- ═══════════ 我的页 ═══════════ -->
+  <div class="page" id="pg-me">
+    <div style="display:flex;flex-direction:column;align-items:center;padding:18px 18px 10px;gap:8px">
+      <div class="profile-avatar">秀</div>
+      <div style="font-size:16px;font-weight:600;color:var(--tx)">李秀芳</div>
+      <div style="font-size:12px;color:var(--tx);opacity:.42">49岁 · 围绝经期 · 绑定女儿中</div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:6px">
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#fde8e3"><svg viewBox="0 0 24 24" stroke="#e07e70"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <div class="menu-text">健康档案</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#fde8e3"><svg viewBox="0 0 24 24" stroke="#e07e70"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg></div>
+        <div class="menu-text">验血报告管理</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#eaf4e7"><svg viewBox="0 0 24 24" stroke="#4a7a3a"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div>
+        <div class="menu-text">补剂提醒设置</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#eaf4e7"><svg viewBox="0 0 24 24" stroke="#4a7a3a"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+        <div class="menu-text">通知与提醒</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#f0ebe3"><svg viewBox="0 0 24 24" stroke="#8a7a6a"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="menu-text">隐私与数据</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#f0ebe3"><svg viewBox="0 0 24 24" stroke="#8a7a6a"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div class="menu-text">关于 HEalthieR</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /phone-body -->
+
+  <!-- ═══════════ 底部导航 ═══════════ -->
+  <div class="bnav">
+    <div class="ni on" onclick="goPage('coach',this)">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>陪伴
+    </div>
+    <div class="ni" onclick="goPage('report',this)">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>报告
+    </div>
+    <div class="ni" onclick="goPage('plan',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>计划
+    </div>
+    <div class="ni" onclick="goPage('bond',this)">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>母女
+    </div>
+    <div class="ni" onclick="goPage('me',this)">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>我的
+    </div>
+  </div>
+</div>
+
+<div class="reward-toast" id="rewardToast" style="display:none">
+  <div class="reward-icon" id="rewardIcon">🎁</div>
+  <div class="reward-text" id="rewardText"></div>
+  <div class="reward-sub" id="rewardSub"></div>
+</div>
+
+<script>
+// ═══════════ COACH PAGE LOGIC ═══════════
+const QA=[
+  {sc:'move',a:'今天非常适合大重量深蹲！更年期后肌肉合成信号减弱，85%强度的重量才能真正唤醒身体。重物，是你今天最好的礼物。'},
+  {sc:'mind',a:'疲惫是身体在说话，先好好听它。今天做10分钟轻柔伸展，喝杯温姜茶。不是每天都要冲刺——温柔对待自己，才是最大的能量。'},
+  {sc:'eat', a:'训练结束45分钟内是黄金窗口！补充30-40g含亮氨酸的蛋白质，打开肌肉合成的开关。乳清蛋白或希腊酸奶，立刻补，不要等！'},
+  {sc:'mind',a:'低落很正常，雌激素波动会直接影响情绪。去户外晒10分钟太阳，写下3件让你感激的小事。你已经很了不起了。'},
+  {sc:'supp',a:'早餐后维D3+K2保护骨骼；任意时间5克肌酸改善脑雾；晚餐后200mg甘氨酸镁助睡眠。这三个，是你最值得的投资。'},
+];
+const SCENES={move:{bg:'#fdf6f3',d:'bg-move'},eat:{bg:'#f4fbf7',d:'bg-eat'},mind:{bg:'#fdf8fb',d:'bg-mind'},supp:{bg:'#f8f7fd',d:'bg-supp'}};
+let mT,tT,cst='idle';
+
+function goPage(n,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pg-'+n).classList.add('on');
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelector('.phone-body').scrollTop=0;
+}
+function setScene(n,el){
+  if(el){document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));el.classList.add('on');}
+  const s=SCENES[n]||SCENES.move;
+  document.getElementById('stage').style.background=s.bg;
+  ['bg-move','bg-eat','bg-mind','bg-supp'].forEach(id=>{
+    const g=document.getElementById(id);if(g)g.style.display=id===s.d?'':'none';
+  });
+}
+function setChar(s){
+  cst=s;const ch=document.getElementById('char');
+  ch.className='char'+(s==='spk'?' spk':s==='lst'?' lst':'');
+  document.getElementById('rrings').style.display=s==='spk'?'block':'none';
+  document.getElementById('wrow').classList.toggle('on',s==='lst');
+  document.getElementById('mbtn').classList.toggle('on',s==='lst');
+}
+function setMouth(o){
+  const m=document.getElementById('MOUTH');
+  if(o){m.setAttribute('d','M36 64 Q44 77 52 64');m.setAttribute('fill','#F39A8E');}
+  else{m.setAttribute('d','M37 66 Q44 72 51 66');m.setAttribute('fill','none');}
+}
+function showGreeting(s){
+  document.getElementById('greeting').style.display=s?'':'none';
+  document.getElementById('bubble-area').style.display=s?'none':'';
+}
+function ask(i){
+  const qa=QA[i];setScene(qa.sc,null);showGreeting(false);
+  document.getElementById('btext').innerHTML='<span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>';
+  setChar('idle');clearInterval(mT);clearInterval(tT);
+  setTimeout(()=>{
+    setChar('spk');document.getElementById('btext').textContent='';
+    let o=false;mT=setInterval(()=>{o=!o;setMouth(o);},168);
+    const txt=qa.a;let idx=0;
+    tT=setInterval(()=>{
+      if(idx>=txt.length){clearInterval(tT);clearInterval(mT);setMouth(false);setChar('idle');return;}
+      document.getElementById('btext').textContent+=txt[idx++];
+    },36);
+  },820);
+}
+function startL(){
+  setChar('lst');document.getElementById('mlbl').textContent='正在聆听…';
+  showGreeting(false);document.getElementById('btext').textContent='说说今天想做什么…';
+}
+function stopL(){
+  document.getElementById('mlbl').textContent='点击说话';
+  ask(Math.floor(Math.random()*QA.length));
+}
+setInterval(()=>{
+  if(cst!=='idle')return;const el=document.getElementById('EL'),er=document.getElementById('ER');
+  if(!el)return;el.setAttribute('ry','.3');er.setAttribute('ry','.3');
+  setTimeout(()=>{el.setAttribute('ry','5');er.setAttribute('ry','5');},120);
+},4500);
+
+// ═══════════ BOND PET SYSTEM ═══════════
+const petState = {
+  hp: 100, maxHp: 100,
+  bondLvl: 1, bondExp: 0, bondNext: 30,
+  food: 0, toy: 0,
+  tasksDone: { mom: false, daughter: false },
+  currentTasks: [],
+  logs: [],
+  lastDecay: Date.now(),
+  status: 'happy',
+  initialized: false
+};
+
+const exercisePool = [
+  {
+    id:'walk',title:'🏃‍♀️ 户外快走 30 分钟',
+    momTask:'完成 30 分钟户外快走，记录心率',
+    daughterTask:'陪妈妈一起走 30 分钟，或同步远程打卡',
+    tips:'<span class="ex-tag warm">低冲击</span><span class="ex-tag safe">关节友好</span> 快走是最安全的有氧运动。保持能说话但不能唱歌的强度，心率在最大心率的60-70%。穿缓冲好的鞋，走平坦路面，避免下坡对膝盖冲击。',
+    reward:{type:'food',name:'🍎 营养果',amount:1}
+  },{
+    id:'yoga',title:'🧘‍♀️ 温和瑜伽 & 拉伸 20 分钟',
+    momTask:'完成 20 分钟温和瑜伽或拉伸',
+    daughterTask:'完成 20 分钟瑜伽，拍下最好看的体式发给妈妈',
+    tips:'<span class="ex-tag mood">情绪调节</span><span class="ex-tag safe">骨骼保护</span> 猫牛式缓解腰背酸痛，婴儿式放松神经。更年期避免高温瑜伽（潮热会不适）。重点拉伸髋部和肩部——雌激素下降会让这些关节更容易僵硬。',
+    reward:{type:'toy',name:'🧶 毛线球',amount:1}
+  },{
+    id:'strength',title:'💪 轻量力量训练 15 分钟',
+    momTask:'用 1-2kg 哑铃完成上肢+核心训练',
+    daughterTask:'完成 15 分钟力量训练，给妈妈发一段加油语音',
+    tips:'<span class="ex-tag safe">骨密度维护</span><span class="ex-tag warm">循序渐进</span> 更年期后每年骨量流失1-3%，力量训练是最好的对抗手段。从1kg哑铃开始，重点练臀桥、靠墙静蹲、弹力带划船。不要憋气——发力时呼气。',
+    reward:{type:'food',name:'🥩 蛋白肉干',amount:2}
+  },{
+    id:'pelvic',title:'🌸 骨盆底肌训练 10 分钟',
+    momTask:'完成 10 分钟凯格尔训练（3组×10次）',
+    daughterTask:'完成 10 分钟核心训练，提醒妈妈坚持',
+    tips:'<span class="ex-tag safe">私密健康</span><span class="ex-tag warm">随时随地</span> 凯格尔运动对预防尿失禁和盆腔器官脱垂至关重要。收紧盆底肌5秒→放松5秒，重复10次为一组。可以躺着、坐着、站着做。别用肚子或大腿发力。',
+    reward:{type:'toy',name:'🎀 蝴蝶结',amount:1}
+  },{
+    id:'balance',title:'🦵 平衡 & 柔韧训练 15 分钟',
+    momTask:'完成单脚站立、脚跟-脚尖走等平衡训练',
+    daughterTask:'和妈妈面对面做平衡挑战，看谁坚持更久',
+    tips:'<span class="ex-tag safe">防跌倒</span><span class="ex-tag mood">专注力</span> 更年期后跌倒风险上升，平衡训练是最被低估的保护。从手扶墙单脚站开始→逐渐放手。加入太极或八段锦的动作，同时锻炼注意力和身体控制。',
+    reward:{type:'food',name:'🥛 钙奶',amount:1}
+  },{
+    id:'stretch',title:'🌿 晨间舒展 & 呼吸练习 15 分钟',
+    momTask:'起床后完成 15 分钟全身舒展 + 腹式呼吸',
+    daughterTask:'早晨给妈妈发一条"早安舒展"提醒',
+    tips:'<span class="ex-tag mood">情绪稳定</span><span class="ex-tag warm">唤醒身体</span> 早晨的僵硬感在更年期更明显。从床上开始——脚踝转圈、膝盖抱胸、猫式弓背。加入4-7-8呼吸法（吸4秒→屏7秒→呼8秒），帮助降低皮质醇，让一天从平静开始。',
+    reward:{type:'toy',name:'🪷 小花',amount:1}
+  },{
+    id:'dance',title:'💃 快乐跳舞 20 分钟',
+    momTask:'放喜欢的音乐，自由跳舞 20 分钟',
+    daughterTask:'和妈妈视频同步跳舞，或用语音分享一首歌',
+    tips:'<span class="ex-tag mood">多巴胺</span><span class="ex-tag warm">心肺</span> 跳舞是"不像运动"的最佳运动。它对情绪的提升特别明显——音乐+身体律动双重刺激多巴胺。不需要会跳，动起来就好。潮热时暂停休息，喝温水。',
+    reward:{type:'food',name:'🍯 蜂蜜糖',amount:2}
+  },{
+    id:'swim',title:'🏊‍♀️ 水中运动 25 分钟',
+    momTask:'游泳或水中行走 25 分钟',
+    daughterTask:'陪妈妈一起去泳池，或远程同步游泳打卡',
+    tips:'<span class="ex-tag safe">零冲击</span><span class="ex-tag warm">全身锻炼</span> 水的浮力卸掉90%的体重，对膝盖和腰椎最友好。更年期女性尤其适合——同时锻炼心肺、力量和柔韧，还没有过热风险（水温自然散热）。不会游泳就在浅水区行走。',
+    reward:{type:'toy',name:'🐠 小海星',amount:1}
+  }
+];
+
+function initPet(){
+  if(petState.initialized) return;
+  petState.initialized = true;
+  pickNewTasks();
+  renderAllPet();
+  startDecay();
+}
+
+function pickNewTasks(){
+  const shuffled=[...exercisePool].sort(()=>Math.random()-.5);
+  petState.currentTasks=shuffled.slice(0,2);
+  petState.tasksDone={mom:false,daughter:false};
+}
+
+function renderAllPet(){
+  renderPetFace();
+  renderHP();
+  renderTasks();
+  renderInventory();
+  renderButtons();
+}
+
+function renderPetFace(){
+  const container=document.getElementById('petContainer');
+  const svg=document.getElementById('petSvg');
+  if(!container||!svg) return;
+  container.className='pet-container';svg.className='pet-svg';
+  if(petState.status==='happy') container.classList.add('happy');
+  else if(petState.status==='hungry'){container.classList.add('hungry');svg.classList.add('hungry');}
+  else if(petState.status==='sick'){container.classList.add('sick');svg.classList.add('sick');}
+  const stEl=document.getElementById('hpStatus');
+  if(stEl) stEl.textContent=petState.status==='happy'?'暖暖现在很开心 ✨':petState.status==='hungry'?'暖暖有点饿了…快喂它吧 🥺':'暖暖生病了…需要你们的照顾 💔';
+  const blEl=document.getElementById('bondLvl');
+  if(blEl) blEl.textContent='亲密 Lv.'+petState.bondLvl;
+}
+
+function renderHP(){
+  const pct=(petState.hp/petState.maxHp)*100;
+  const bar=document.getElementById('hpBar');if(!bar) return;
+  bar.style.width=pct+'%';bar.className='hp-bar-inner';
+  if(pct<=25) bar.classList.add('danger');else if(pct<=50) bar.classList.add('warning');
+  const num=document.getElementById('hpNum');if(num) num.textContent=petState.hp+'/'+petState.maxHp;
+}
+
+function renderTasks(){
+  const container=document.getElementById('taskList');if(!container) return;
+  container.innerHTML=petState.currentTasks.map((ex,i)=>{
+    const bothDone=petState.tasksDone.mom&&petState.tasksDone.daughter;
+    return `<div class="task-card${bothDone?' done':''}" id="taskCard${i}">
+      <div class="task-header">
+        <div class="avatar-sm" style="background:${i===0?'#F39A8E':'#7DA06C'}">${i===0?'妈':'女'}</div>
+        <div class="task-info">
+          <div class="task-name">${ex.title}</div>
+          <div class="task-sub">${i===0?'妈妈的任务':'女儿的任务'} · ${petState.tasksDone[i===0?'mom':'daughter']?'✅ 已完成':'待完成'}</div>
+        </div>
+        <div class="task-check${petState.tasksDone[i===0?'mom':'daughter']?' done':''}" onclick="toggleTask(${i})">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+      <div class="task-body">
+        <div style="margin-bottom:5px">📋 <strong>${i===0?'妈妈':'女儿'}：</strong>${i===0?ex.momTask:ex.daughterTask}</div>
+        <div class="ex-detail">${ex.tips}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderInventory(){
+  const fe=document.getElementById('inv-food'),te=document.getElementById('inv-toy');
+  if(fe) fe.className='inv-item'+(petState.food===0?'':'');
+  if(te) te.className='inv-item'+(petState.toy===0?'':'');
+  const fc=document.getElementById('foodCount'),tc=document.getElementById('toyCount');
+  if(fc) fc.textContent=petState.food;
+  if(tc) tc.textContent=petState.toy;
+}
+
+function renderButtons(){
+  const bf=document.getElementById('btnFeed'),bp=document.getElementById('btnPlay');
+  if(bf) bf.disabled=petState.food===0;
+  if(bp) bp.disabled=petState.toy===0;
+}
+
+function renderLogs(){
+  const area=document.getElementById('logArea');if(!area) return;
+  const recent=petState.logs.slice(-15);
+  area.innerHTML=recent.map(l=>`<div class="log-item"><span class="log-emoji">${l.emoji}</span><span class="log-text">${l.text}</span><span class="log-time">${l.time}</span></div>`).join('')||'<div class="log-item"><span class="log-emoji">🌱</span><span class="log-text">新的一天，开始和暖暖的故事吧</span><span class="log-time">现在</span></div>';
+}
+
+function toggleTask(idx){
+  const key=idx===0?'mom':'daughter';
+  if(petState.tasksDone[key]) return;
+  petState.tasksDone[key]=true;
+  const ex=petState.currentTasks[idx];
+  addLog('✅',(idx===0?'妈妈':'女儿')+'完成了「'+ex.title+'」');
+  checkBothDone();
+  renderAllPet();
+}
+
+function checkBothDone(){
+  if(petState.tasksDone.mom&&petState.tasksDone.daughter&&petState.currentTasks.length>0){
+    const rewards=[];
+    petState.currentTasks.forEach(ex=>{
+      const r=ex.reward;
+      if(r.type==='food') petState.food+=r.amount;else petState.toy+=r.amount;
+      rewards.push(r.name+' ×'+r.amount);
+    });
+    petState.bondExp+=10;
+    if(petState.bondExp>=petState.bondNext){
+      petState.bondExp-=petState.bondNext;petState.bondLvl++;
+      petState.bondNext=Math.floor(petState.bondNext*1.5);
+      addLog('⭐','亲密等级提升！现在是 Lv.'+petState.bondLvl);
+    }
+    healPet(20);petState.status='happy';
+    addLog('🎉','母女一起完成了今日任务！获得 '+rewards.join('、'));
+    showRewardToast(rewards);
+    setTimeout(()=>{pickNewTasks();renderAllPet();},2000);
+  }
+}
+
+function feedPet(){
+  if(petState.food<=0) return;petState.food--;healPet(15);
+  addLog('🍎','喂了暖暖一份食物，HP +15');
+  renderAllPet();renderPetFace();
+}
+
+function playPet(){
+  if(petState.toy<=0) return;petState.toy--;healPet(10);
+  addLog('🎾','和暖暖玩了一会儿，HP +10');
+  renderAllPet();renderPetFace();
+}
+
+function petPet(){
+  healPet(2);
+  const container=document.getElementById('petContainer');if(!container) return;
+  const heart=document.createElement('div');
+  heart.className='pet-emoji';
+  heart.textContent=['💕','❤️','✨','💝','🌸'][Math.floor(Math.random()*5)];
+  heart.style.left=(40+Math.random()*40)+'px';
+  container.appendChild(heart);
+  setTimeout(()=>heart.remove(),1500);
+  addLog('✋','摸了摸暖暖的头，HP +2');
+  renderHP();
+}
+
+function healPet(amount){
+  petState.hp=Math.min(petState.maxHp,petState.hp+amount);
+  if(petState.hp>50&&petState.status==='hungry') petState.status='happy';
+  if(petState.hp>25&&petState.status==='sick') petState.status='hungry';
+}
+
+function startDecay(){
+  setInterval(()=>{
+    const now=Date.now(),elapsed=(now-petState.lastDecay)/1000;
+    const decay=Math.floor(elapsed/30);
+    if(decay>0){
+      petState.lastDecay=now;
+      petState.hp=Math.max(0,petState.hp-decay);
+      if(petState.hp<=25&&petState.status!=='sick'){petState.status='sick';addLog('💔','暖暖生病了…快完成共同任务帮它恢复！');}
+      else if(petState.hp<=50&&petState.status==='happy'){petState.status='hungry';addLog('🥺','暖暖饿了…完成运动会获得食物哦');}
+      renderAllPet();
+    }
+  },5000);
+}
+
+function showRewardToast(rewards){
+  const toast=document.getElementById('rewardToast');if(!toast) return;
+  document.getElementById('rewardIcon').textContent='🎁';
+  document.getElementById('rewardText').textContent='母女同心，获得奖励！';
+  document.getElementById('rewardSub').textContent=rewards.join('、');
+  toast.style.display='block';
+  setTimeout(()=>{toast.style.display='none';},2200);
+}
+
+function addLog(emoji,text){
+  const now=new Date();
+  const time=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  petState.logs.unshift({emoji,text,time});
+  if(petState.logs.length>50) petState.logs.length=50;
+  renderLogs();
+}
+
+// Tips rotation
+const menopauseTips=[
+  '更年期运动重在<span style="color:var(--brd);font-weight:500">持续而非强度</span>。每天20-30分钟的低冲击运动，比一次高强度更保护关节和骨骼。',
+  '运动前<span style="color:var(--brd);font-weight:500">充分热身</span>很重要。雌激素下降让肌腱弹性变差，热身不足更容易拉伤。关节转圈+动态拉伸，至少5分钟。',
+  '<span style="color:var(--brd);font-weight:500">潮热时暂停</span>，不要硬撑。穿分层透气的运动服，准备湿毛巾降温。潮热过去再继续，身体在告诉你它需要休息。',
+  '运动后补充<span style="color:var(--brd);font-weight:500">钙 + 维D</span>。更年期每天需要1200mg钙（比普通女性多200mg），一杯牛奶+一份酸奶差不多。维D帮助钙吸收。',
+  '<span style="color:var(--ac);font-weight:500">女儿陪练是最好的动力。</span>研究显示有家人陪伴的运动坚持率高3倍。哪怕只是并排走路，陪伴本身就在降低皮质醇。',
+  '睡眠不好的话，<span style="color:var(--brd);font-weight:500">早晨运动比晚上好</span>。早晨的阳光+运动帮助校准生物钟，晚上太激烈的运动会升高核心温度，加重失眠。'
+];
+let tipIdx=0;
+setInterval(()=>{
+  tipIdx=(tipIdx+1)%menopauseTips.length;
+  const tb=document.getElementById('tipsBody');if(tb) tb.innerHTML=menopauseTips[tipIdx];
+},15000);
+
+// Initialize pet system when bond page first shown
+const bondObserver=new MutationObserver(()=>{
+  const bondPage=document.getElementById('pg-bond');
+  if(bondPage&&bondPage.classList.contains('on')) initPet();
+});
+bondObserver.observe(document.getElementById('pg-bond'),{attributes:true,attributeFilter:['class']});
+// Also init on click of bond nav
+const origGoPage=goPage;
+goPage=function(n,el){
+  origGoPage(n,el);
+  if(n==='bond') initPet();
+};
+</script>
+</body>
+</html>
