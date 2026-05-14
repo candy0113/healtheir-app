@@ -1,0 +1,91 @@
+<!-- pages/coach/coach.wxml -->
+<!-- HEalthieR 语音教练页面 -->
+
+<view class="page">
+
+  <!-- 场景切换 Tab -->
+  <scroll-view class="scene-tabs" scroll-x>
+    <view
+      wx:for="{{scenes}}"
+      wx:key="key"
+      class="scene-tab {{currentScene === item.key ? 'active' : ''}}"
+      bindtap="switchScene"
+      data-scene="{{item.key}}"
+    >{{item.label}}</view>
+  </scroll-view>
+
+  <!-- 主舞台：场景背景 + 角色 -->
+  <view class="stage" style="background:{{scenes[currentSceneIndex].bgColor}}">
+
+    <!-- 场景插图层 -->
+    <image
+      class="scene-bg"
+      src="/images/scenes/{{currentScene}}.svg"
+      mode="aspectFill"
+    />
+
+    <!-- 2D 角色（帧动画 or Lottie） -->
+    <view class="avatar-wrap avatar-{{avatarState}}">
+      <!-- 使用 Lottie 组件时替换为: -->
+      <!-- <lottie src="/animations/coach_{{avatarAction}}.json" autoplay loop /> -->
+      <image
+        class="avatar-img"
+        src="/images/avatar/coach_{{avatarState}}.png"
+        mode="aspectFit"
+      />
+      <!-- 说话时的嘴型波纹 -->
+      <view class="speak-ripple" wx:if="{{avatarState === 'speaking'}}">
+        <view class="ripple r1"></view>
+        <view class="ripple r2"></view>
+        <view class="ripple r3"></view>
+      </view>
+    </view>
+
+    <!-- 思考中动画 -->
+    <view class="thinking-dots" wx:if="{{avatarState === 'thinking'}}">
+      <view class="dot"></view>
+      <view class="dot"></view>
+      <view class="dot"></view>
+    </view>
+
+  </view>
+
+  <!-- 字幕区 -->
+  <view class="subtitle-area">
+    <view class="subtitle-label" wx:if="{{question}}">你说：{{question}}</view>
+    <view class="subtitle-answer">{{subtitleText}}</view>
+  </view>
+
+  <!-- 快速话题 -->
+  <scroll-view class="topic-row" scroll-x wx:if="{{avatarState === 'idle'}}">
+    <view
+      wx:for="{{topicChips}}"
+      wx:key="index"
+      class="topic-chip"
+      bindtap="onTopicTap"
+      data-text="{{item}}"
+    >{{item}}</view>
+  </scroll-view>
+
+  <!-- 语音波形（录音中显示） -->
+  <view class="wave-bars" wx:if="{{avatarState === 'listening'}}">
+    <view class="bar b1"></view>
+    <view class="bar b2"></view>
+    <view class="bar b3"></view>
+    <view class="bar b4"></view>
+    <view class="bar b5"></view>
+  </view>
+
+  <!-- 麦克风按钮 -->
+  <view class="mic-area">
+    <view
+      class="mic-btn {{micPressed ? 'pressed' : ''}}"
+      bindtouchstart="onMicTouchStart"
+      bindtouchend="onMicTouchEnd"
+    >
+      <image src="/images/icons/mic.svg" class="mic-icon"/>
+    </view>
+    <text class="mic-hint">{{micPressed ? '松开发送' : '按住说话'}}</text>
+  </view>
+
+</view>
