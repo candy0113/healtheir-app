@@ -66,6 +66,11 @@ body{min-height:100vh;display:flex;align-items:center;justify-content:center;bac
 .mic-big-lbl{font-size:13px;letter-spacing:.03em}
 .hist{display:flex;align-items:center;justify-content:center;gap:6px;padding:0 0 14px;font-size:12px;color:var(--tx);opacity:.35;cursor:pointer}
 .hist svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.speaking-bar{display:flex;align-items:center;gap:6px;padding:4px 18px 0;opacity:0;transition:opacity .2s;height:24px;flex-shrink:0}
+.speaking-bar.on{opacity:1}
+.speaking-bar span{font-size:11px;color:var(--brd);font-weight:600;letter-spacing:.04em}
+.sp-dot{width:5px;height:5px;border-radius:50%;background:var(--br);animation:tdot .6s ease-in-out infinite}
+.sp-dot:nth-child(2){animation-delay:.15s}.sp-dot:nth-child(3){animation-delay:.3s}
 
 /* ═══════ SHARED CARDS ═══════ */
 .sec-title{font-size:15px;font-weight:600;color:var(--tx);padding:14px 18px 8px}
@@ -275,6 +280,7 @@ body{min-height:100vh;display:flex;align-items:center;justify-content:center;bac
     <div class="bubble-area" id="bubble-area" style="display:none">
       <div class="bubble"><div class="bname">DR. STACY</div><div class="btext" id="btext"></div></div>
     </div>
+    <div class="speaking-bar" id="spk-bar"><div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div><span id="spkLabel">正在播报…</span></div>
     <div class="topic-row">
       <div class="tchip" onclick="ask(0)">今天练什么？</div>
       <div class="tchip" onclick="ask(1)">我感觉疲惫</div>
@@ -469,6 +475,11 @@ body{min-height:100vh;display:flex;align-items:center;justify-content:center;bac
       </div>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
+      <div class="menu-item" onclick="switchLang()">
+        <div class="menu-icon" style="background:#f0ebe3"><svg viewBox="0 0 24 24" stroke="#8a7a6a"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+        <div class="menu-text" id="langLabel">🌐 Language / 语言</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
       <div class="menu-item">
         <div class="menu-icon" style="background:#f0ebe3"><svg viewBox="0 0 24 24" stroke="#8a7a6a"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
         <div class="menu-text">隐私与数据</div>
@@ -512,7 +523,7 @@ body{min-height:100vh;display:flex;align-items:center;justify-content:center;bac
 
 <script>
 // ═══════════ COACH PAGE LOGIC ═══════════
-const QA=[
+var QA = (L && L.coachQA) || [
   {sc:'move',a:'今天非常适合大重量深蹲！更年期后肌肉合成信号减弱，85%强度的重量才能真正唤醒身体。重物，是你今天最好的礼物。'},
   {sc:'mind',a:'疲惫是身体在说话，先好好听它。今天做10分钟轻柔伸展，喝杯温姜茶。不是每天都要冲刺——温柔对待自己，才是最大的能量。'},
   {sc:'eat', a:'训练结束45分钟内是黄金窗口！补充30-40g含亮氨酸的蛋白质，打开肌肉合成的开关。乳清蛋白或希腊酸奶，立刻补，不要等！'},
@@ -523,6 +534,7 @@ const SCENES={move:{bg:'#fdf6f3',d:'bg-move'},eat:{bg:'#f4fbf7',d:'bg-eat'},mind
 let mT,tT,cst='idle';
 
 function goPage(n,el){
+  stopSpeech();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.getElementById('pg-'+n).classList.add('on');
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
@@ -543,6 +555,7 @@ function setChar(s){
   document.getElementById('rrings').style.display=s==='spk'?'block':'none';
   document.getElementById('wrow').classList.toggle('on',s==='lst');
   document.getElementById('mbtn').classList.toggle('on',s==='lst');
+  document.getElementById('spk-bar').classList.toggle('on',s==='spk');
 }
 function setMouth(o){
   const m=document.getElementById('MOUTH');
@@ -565,6 +578,19 @@ function ask(i){
       if(idx>=txt.length){clearInterval(tT);clearInterval(mT);setMouth(false);setChar('idle');return;}
       document.getElementById('btext').textContent+=txt[idx++];
     },36);
+    // Voice TTS
+    var ttsText = qa.a;
+    speak(ttsText, function(){
+      clearInterval(mT); clearInterval(tT);
+      setMouth(false); setChar('idle');
+    });
+    var fallbackMs = qa.a.length * 65;
+    setTimeout(function(){
+      if(cst==='spk'){
+        clearInterval(mT); clearInterval(tT);
+        setMouth(false); setChar('idle');
+      }
+    }, fallbackMs);
   },820);
 }
 function startL(){
@@ -581,6 +607,339 @@ setInterval(()=>{
   setTimeout(()=>{el.setAttribute('ry','5');er.setAttribute('ry','5');},120);
 },4500);
 
+// ═══════════ VOICE TTS ═══════════
+var synth = window.speechSynthesis;
+var currentUtter = null;
+function speak(text, onEnd) {
+  if (!synth) { onEnd && onEnd(); return; }
+  synth.cancel();
+  var utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.92; utter.pitch = 1.05; utter.volume = 1;
+  var voices = synth.getVoices();
+  var lang = (window._lang || 'zh');
+  var preferred;
+  if (lang === 'zh') {
+    preferred = voices.find(function(v){ return /zh[-_]CN|chinese|Tingting|Yaoyao/i.test(v.name+','+v.lang); })
+      || voices.find(function(v){ return /zh/i.test(v.lang); });
+  } else {
+    preferred = voices.find(function(v){ return /female|woman|samantha|victoria|karen|moira|en[-_]US/i.test(v.name); })
+      || voices.find(function(v){ return /en/i.test(v.lang); });
+  }
+  if (preferred) utter.voice = preferred;
+  utter.onend = function(){ onEnd && onEnd(); };
+  utter.onerror = function(){ onEnd && onEnd(); };
+  currentUtter = utter;
+  synth.speak(utter);
+}
+function stopSpeech() { if (synth) synth.cancel(); }
+if (synth && synth.onvoiceschanged !== undefined) {
+  synth.onvoiceschanged = function(){ synth.getVoices(); };
+}
+
+// ═══════════ I18N ═══════════
+var I18N = {
+  zh: {
+    statusTitle: 'HEalthieR',
+    coachScenes: ['今日运动','营养补给','情绪能量','补剂时间'],
+    coachGreeting: {name:'Dr. Stacy',title:'今天可以做些什么<br>点亮你的生活？',sub:'跟我说说，让我来陪你'},
+    coachTopics: ['今天练什么？','我感觉疲惫','训练后吃什么？','心情低落','补剂怎么吃？'],
+    coachMic: '点击说话', coachMicListening: '正在聆听…', coachMicPlaceholder: '说说今天想做什么…',
+    coachHistory: '过往健康记录',
+    coachQA: [
+      {sc:'move',a:'今天非常适合大重量深蹲！更年期后肌肉合成信号减弱，85%强度的重量才能真正唤醒身体。重物，是你今天最好的礼物。'},
+      {sc:'mind',a:'疲惫是身体在说话，先好好听它。今天做10分钟轻柔伸展，喝杯温姜茶。不是每天都要冲刺——温柔对待自己，才是最大的能量。'},
+      {sc:'eat',a:'训练结束45分钟内是黄金窗口！补充30-40g含亮氨酸的蛋白质，打开肌肉合成的开关。乳清蛋白或希腊酸奶，立刻补，不要等！'},
+      {sc:'mind',a:'低落很正常，雌激素波动会直接影响情绪。去户外晒10分钟太阳，写下3件让你感激的小事。你已经很了不起了。'},
+      {sc:'supp',a:'早餐后维D3+K2保护骨骼；任意时间5克肌酸改善脑雾；晚餐后200mg甘氨酸镁助睡眠。这三个，是你最值得的投资。'},
+    ],
+    spkLabel: '正在播报…',
+    reportSec: '健康报告', reportStats: ['本周训练','蛋白质达标','平均睡眠','情绪评分'],
+    reportStatVals: ['4次','86%','6.8h','7.2/10'], reportTags: ['达标','优秀','偏低','稳定'],
+    reportChart: '本周运动强度', reportDays: ['一','二','三','四','五','六','日'],
+    reportSummaryTitle: 'Dr. Stacy 本周小结',
+    reportSummary: '本周训练质量不错！睡眠时长略偏低，建议晚餐后减少咖啡因，睡前补充镁有助于放松。继续保持蛋白质的好习惯。',
+    planSec1: '本周计划', planSec2: '营养计划',
+    planTitle: '母女陪伴',
+    planItems:[
+      {dot:'#7DA06C',name:'大重量深蹲 + 硬拉',sub:'3组 × 5次 · 85% 1RM',time:'周一'},
+      {dot:'#F39A8E',name:'SIT 短间歇冲刺',sub:'30秒冲 × 5组 · 动感单车',time:'周三'},
+      {dot:'#7DA06C',name:'上肢推拉 + 核心',sub:'卧推·划船·平板支撑',time:'周五'},
+      {dot:'#e0d5c5',name:'多向跳跃 + 拉伸',sub:'骨密度维护 · 15分钟',time:'周六'},
+    ],
+    planNutri:[
+      {dot:'#F39A8E',name:'训练后蛋白质窗口',sub:'乳清蛋白 30-40g · 45分钟内',time:'每训练日'},
+      {dot:'#7DA06C',name:'晚餐补充镁',sub:'甘氨酸镁 200mg · 助睡眠',time:'每晚'},
+    ],
+    bondBonded: '已绑定', bondSince: '绑定于 2024.06.01',
+    bondCheer: '小花今日给你发来鼓励',
+    bondCheerMsg: '妈妈今天训练了吗？我看到你的计划里有深蹲，加油！我也陪你一起打卡！',
+    bondWeekCheckins: '本周共同打卡',
+    bondMom: '妈妈', bondDau: '小花', bondTotal: '合计',
+    bondHeaderIcon: '🌸', bondHeaderTitle: '一起养育 · 暖暖', bondHeaderSub: '母女共同运动，暖暖就会健康成长',
+    petHappy: '暖暖现在很开心 ✨', petHungry: '暖暖有点饿了…快喂它吧 🥺', petSick: '暖暖生病了…需要你们的照顾 💔',
+    petBondLvl: '亲密 Lv.', petFeed: '🍎 喂食', petPlay: '🎾 玩耍',
+    invFood: '食物', invToy: '玩具',
+    bondSharedTitle: '🤝 今日共同任务', bondSharedSub: '母女各完成一项',
+    taskMom: '妈妈的任务', taskDau: '女儿的任务', taskDone: '✅ 已完成', taskPending: '待完成',
+    tipsTitle: '💡 给妈妈的贴心建议',
+    tips: [
+      '更年期运动重在<span style="color:var(--brd);font-weight:500">持续而非强度</span>。每天20-30分钟的低冲击运动，比一次高强度更保护关节和骨骼。',
+      '运动前<span style="color:var(--brd);font-weight:500">充分热身</span>很重要。雌激素下降让肌腱弹性变差，热身不足更容易拉伤。关节转圈+动态拉伸，至少5分钟。',
+      '<span style="color:var(--brd);font-weight:500">潮热时暂停</span>，不要硬撑。穿分层透气的运动服，准备湿毛巾降温。潮热过去再继续，身体在告诉你它需要休息。',
+      '运动后补充<span style="color:var(--brd);font-weight:500">钙 + 维D</span>。更年期每天需要1200mg钙（比普通女性多200mg），一杯牛奶+一份酸奶差不多。维D帮助钙吸收。',
+      '<span style="color:var(--ac);font-weight:500">女儿陪练是最好的动力。</span>研究显示有家人陪伴的运动坚持率高3倍。哪怕只是并排走路，陪伴本身就在降低皮质醇。',
+      '睡眠不好的话，<span style="color:var(--brd);font-weight:500">早晨运动比晚上好</span>。早晨的阳光+运动帮助校准生物钟，晚上太激烈的运动会升高核心温度，加重失眠。',
+    ],
+    logTitle: '📋 暖暖日记',
+    logInit: ['🏠','暖暖来到这个家，等你们一起照顾它','刚刚'],
+    logNewDay: ['🌱','新的一天，开始和暖暖的故事吧','现在'],
+    rewardTitle: '母女同心，获得奖励！',
+    exercisePool: [
+      {id:'walk',title:'🏃‍♀️ 户外快走 30 分钟',momTask:'完成 30 分钟户外快走，记录心率',daughterTask:'陪妈妈一起走 30 分钟，或同步远程打卡',tips:'<span class="ex-tag warm">低冲击</span><span class="ex-tag safe">关节友好</span> 快走是最安全的有氧运动。保持能说话但不能唱歌的强度，心率在最大心率的60-70%。穿缓冲好的鞋，走平坦路面，避免下坡对膝盖冲击。',reward:{type:'food',name:'🍎 营养果',amount:1}},
+      {id:'yoga',title:'🧘‍♀️ 温和瑜伽 & 拉伸 20 分钟',momTask:'完成 20 分钟温和瑜伽或拉伸',daughterTask:'完成 20 分钟瑜伽，拍下最好看的体式发给妈妈',tips:'<span class="ex-tag mood">情绪调节</span><span class="ex-tag safe">骨骼保护</span> 猫牛式缓解腰背酸痛，婴儿式放松神经。更年期避免高温瑜伽（潮热会不适）。重点拉伸髋部和肩部——雌激素下降会让这些关节更容易僵硬。',reward:{type:'toy',name:'🧶 毛线球',amount:1}},
+      {id:'strength',title:'💪 轻量力量训练 15 分钟',momTask:'用 1-2kg 哑铃完成上肢+核心训练',daughterTask:'完成 15 分钟力量训练，给妈妈发一段加油语音',tips:'<span class="ex-tag safe">骨密度维护</span><span class="ex-tag warm">循序渐进</span> 更年期后每年骨量流失1-3%，力量训练是最好的对抗手段。从1kg哑铃开始，重点练臀桥、靠墙静蹲、弹力带划船。不要憋气——发力时呼气。',reward:{type:'food',name:'🥩 蛋白肉干',amount:2}},
+      {id:'pelvic',title:'🌸 骨盆底肌训练 10 分钟',momTask:'完成 10 分钟凯格尔训练（3组×10次）',daughterTask:'完成 10 分钟核心训练，提醒妈妈坚持',tips:'<span class="ex-tag safe">私密健康</span><span class="ex-tag warm">随时随地</span> 凯格尔运动对预防尿失禁和盆腔器官脱垂至关重要。收紧盆底肌5秒→放松5秒，重复10次为一组。可以躺着、坐着、站着做。别用肚子或大腿发力。',reward:{type:'toy',name:'🎀 蝴蝶结',amount:1}},
+      {id:'balance',title:'🦵 平衡 & 柔韧训练 15 分钟',momTask:'完成单脚站立、脚跟-脚尖走等平衡训练',daughterTask:'和妈妈面对面做平衡挑战，看谁坚持更久',tips:'<span class="ex-tag safe">防跌倒</span><span class="ex-tag mood">专注力</span> 更年期后跌倒风险上升，平衡训练是最被低估的保护。从手扶墙单脚站开始→逐渐放手。加入太极或八段锦的动作，同时锻炼注意力和身体控制。',reward:{type:'food',name:'🥛 钙奶',amount:1}},
+      {id:'stretch',title:'🌿 晨间舒展 & 呼吸练习 15 分钟',momTask:'起床后完成 15 分钟全身舒展 + 腹式呼吸',daughterTask:'早晨给妈妈发一条"早安舒展"提醒',tips:'<span class="ex-tag mood">情绪稳定</span><span class="ex-tag warm">唤醒身体</span> 早晨的僵硬感在更年期更明显。从床上开始——脚踝转圈、膝盖抱胸、猫式弓背。加入4-7-8呼吸法（吸4秒→屏7秒→呼8秒），帮助降低皮质醇，让一天从平静开始。',reward:{type:'toy',name:'🪷 小花',amount:1}},
+      {id:'dance',title:'💃 快乐跳舞 20 分钟',momTask:'放喜欢的音乐，自由跳舞 20 分钟',daughterTask:'和妈妈视频同步跳舞，或用语音分享一首歌',tips:'<span class="ex-tag mood">多巴胺</span><span class="ex-tag warm">心肺</span> 跳舞是"不像运动"的最佳运动。它对情绪的提升特别明显——音乐+身体律动双重刺激多巴胺。不需要会跳，动起来就好。潮热时暂停休息，喝温水。',reward:{type:'food',name:'🍯 蜂蜜糖',amount:2}},
+      {id:'swim',title:'🏊‍♀️ 水中运动 25 分钟',momTask:'游泳或水中行走 25 分钟',daughterTask:'陪妈妈一起去泳池，或远程同步游泳打卡',tips:'<span class="ex-tag safe">零冲击</span><span class="ex-tag warm">全身锻炼</span> 水的浮力卸掉90%的体重，对膝盖和腰椎最友好。更年期女性尤其适合——同时锻炼心肺、力量和柔韧，还没有过热风险（水温自然散热）。不会游泳就在浅水区行走。',reward:{type:'toy',name:'🐠 小海星',amount:1}},
+    ],
+    meProfile: {name:'李秀芳',desc:'49岁 · 围绝经期 · 绑定女儿中'},
+    meMenu: ['健康档案','验血报告管理','补剂提醒设置','通知与提醒','隐私与数据','关于 HEalthieR'],
+    meLangLabel: '🌐 Language / 语言',
+    nav: ['陪伴','报告','计划','母女','我的'],
+    logActions: {
+      taskDoneMom: ['✅','{name}完成了「{title}」'],
+      taskDoneDau: ['✅','{name}完成了「{title}」'],
+      bondLvlUp: ['⭐','亲密等级提升！现在是 Lv.{lvl}'],
+      bothDone: ['🎉','母女一起完成了今日任务！获得 {rewards}'],
+      fed: ['🍎','喂了暖暖一份食物，HP +15'],
+      played: ['🎾','和暖暖玩了一会儿，HP +10'],
+      petted: ['✋','摸了摸暖暖的头，HP +2'],
+      petSick: ['💔','暖暖生病了…快完成共同任务帮它恢复！'],
+      petHungry: ['🥺','暖暖饿了…完成运动会获得食物哦'],
+    }
+  },
+  en: {
+    statusTitle: 'HEalthieR',
+    coachScenes: ['Workout','Nutrition','Mood','Supplements'],
+    coachGreeting: {name:'Dr. Stacy',title:'What can we do today<br>to brighten your life?',sub:'Tell me what's on your mind'},
+    coachTopics: ['What to train?','I feel tired','Post-workout food?','Feeling low','Supplement plan'],
+    coachMic: 'Tap to Speak', coachMicListening: 'Listening…', coachMicPlaceholder: 'Tell me what's on your mind…',
+    coachHistory: 'Health History',
+    coachQA: [
+      {sc:'move',a:'Today is perfect for heavy squats! After menopause, muscle-building signals weaken. Heavy weights at 85% intensity are your best medicine right now.'},
+      {sc:'mind',a:'Fatigue is your body speaking — first, listen to it. A gentle 10-min stretch and warm ginger tea. Not every day needs to be a sprint. Being tender with yourself is the greatest energy.'},
+      {sc:'eat',a:'The 45 minutes after training is your golden window! 30-40g of leucine-rich protein. Whey or Greek yogurt — take it immediately. Don't wait!'},
+      {sc:'mind',a:'Feeling low is completely normal — estrogen fluctuations directly affect mood. Try 10 minutes of sunshine and write down 3 things you're grateful for. You're already remarkable.'},
+      {sc:'supp',a:'Vit D3+K2 with breakfast for bones; 5g creatine any time for brain fog; 200mg magnesium glycinate at dinner for sleep. These three are your best investment.'},
+    ],
+    spkLabel: 'Speaking…',
+    reportSec: 'Health Report', reportStats: ['Weekly Training','Protein Target','Avg Sleep','Mood Score'],
+    reportStatVals: ['4 sessions','86%','6.8h','7.2/10'], reportTags: ['On Track','Excellent','Low','Stable'],
+    reportChart: 'Weekly Workout Intensity', reportDays: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    reportSummaryTitle: 'Dr. Stacy Weekly Summary',
+    reportSummary: 'Great training quality this week! Sleep is slightly low — try cutting caffeine after dinner and taking magnesium before bed. Keep up the excellent protein habit!',
+    planSec1: 'Weekly Plan', planSec2: 'Nutrition Plan',
+    planTitle: 'Mother & Daughter',
+    planItems:[
+      {dot:'#7DA06C',name:'Heavy Squats & Deadlifts',sub:'3×5 · 85% 1RM',time:'Mon'},
+      {dot:'#F39A8E',name:'SIT Sprint Intervals',sub:'30s sprint ×5 · Spin bike',time:'Wed'},
+      {dot:'#7DA06C',name:'Upper Push & Pull + Core',sub:'Bench · Row · Plank',time:'Fri'},
+      {dot:'#e0d5c5',name:'Plyometrics & Stretch',sub:'Bone density · 15 min',time:'Sat'},
+    ],
+    planNutri:[
+      {dot:'#F39A8E',name:'Post-Workout Protein Window',sub:'Whey 30-40g · Within 45 min',time:'Training Days'},
+      {dot:'#7DA06C',name:'Evening Magnesium',sub:'Glycinate 200mg · Sleep support',time:'Nightly'},
+    ],
+    bondBonded: 'Bonded ✓', bondSince: 'Bonded since 2024.06.01',
+    bondCheer: 'Emma sent you a cheer today',
+    bondCheerMsg: 'Mom, did you do your squats today? I saw it on your plan — you've got this! 💪',
+    bondWeekCheckins: 'This week's check-ins',
+    bondMom: 'Mom', bondDau: 'Emma', bondTotal: 'Total',
+    bondHeaderIcon: '🌸', bondHeaderTitle: 'Nurture Together · NuanNuan', bondHeaderSub: 'Exercise together, NuanNuan thrives',
+    petHappy: 'NuanNuan is happy ✨', petHungry: 'NuanNuan is hungry… time to feed! 🥺', petSick: 'NuanNuan is sick… needs your care 💔',
+    petBondLvl: 'Bond Lv.', petFeed: '🍎 Feed', petPlay: '🎾 Play',
+    invFood: 'Food', invToy: 'Toys',
+    bondSharedTitle: '🤝 Today's Shared Tasks', bondSharedSub: 'Mom & daughter each complete one',
+    taskMom: 'Mom's task', taskDau: 'Daughter's task', taskDone: '✅ Done', taskPending: 'Pending',
+    tipsTitle: '💡 Tips for Mom',
+    tips: [
+      'Perimenopause exercise is about <span style="color:var(--brd);font-weight:500">consistency over intensity</span>. 20-30 min low-impact daily is better than one intense session.',
+      '<span style="color:var(--brd);font-weight:500">Warm up thoroughly</span>. Declining estrogen reduces tendon elasticity. Joint rotations + dynamic stretches for at least 5 min.',
+      '<span style="color:var(--brd);font-weight:500">Pause during hot flashes</span>, don't push through. Wear breathable layers and keep a cool towel handy.',
+      'Post-exercise: <span style="color:var(--brd);font-weight:500">Calcium + Vitamin D</span>. Perimenopausal women need 1200mg calcium daily. A glass of milk + yogurt covers it.',
+      '<span style="color:var(--ac);font-weight:500">A daughter's company is the best motivation.</span> Studies show 3× higher adherence with family support.',
+      'If sleep is difficult, <span style="color:var(--brd);font-weight:500">morning exercise is better than evening</span>. Morning sunlight + movement calibrates your circadian rhythm.',
+    ],
+    logTitle: '📋 NuanNuan's Diary',
+    logInit: ['🏠','NuanNuan has arrived! Take good care of her together.','just now'],
+    logNewDay: ['🌱','A new day begins with NuanNuan.','now'],
+    rewardTitle: 'Teamwork pays off! Rewards earned!',
+    exercisePool: [
+      {id:'walk',title:'🏃‍♀️ Brisk Walk 30 min',momTask:'Complete 30 min outdoor brisk walk, record heart rate',daughterTask:'Walk with mom for 30 min, or sync remotely',tips:'<span class="ex-tag warm">Low Impact</span><span class="ex-tag safe">Joint Friendly</span> Brisk walking is the safest cardio. Keep a conversational pace at 60-70% max HR. Wear cushioned shoes, walk on flat surfaces, avoid downhill knee impact.',reward:{type:'food',name:'🍎 Apple',amount:1}},
+      {id:'yoga',title:'🧘‍♀️ Gentle Yoga & Stretch 20 min',momTask:'Complete 20 min gentle yoga or stretching',daughterTask:'Complete 20 min yoga, send mom your best pose photo',tips:'<span class="ex-tag mood">Mood</span><span class="ex-tag safe">Bone Health</span> Cat-cow eases lower back pain, child's pose relaxes the nervous system. Avoid hot yoga during perimenopause (hot flashes). Focus on hip and shoulder stretches.',reward:{type:'toy',name:'🧶 Yarn Ball',amount:1}},
+      {id:'strength',title:'💪 Light Strength Training 15 min',momTask:'Use 1-2kg dumbbells for upper body + core',daughterTask:'Complete 15 min strength training, send mom a voice cheer',tips:'<span class="ex-tag safe">Bone Density</span><span class="ex-tag warm">Gradual</span> After menopause, 1-3% bone loss annually. Strength training is the best countermeasure. Start with 1kg dumbbells — glute bridges, wall sits, resistance band rows.',reward:{type:'food',name:'🥩 Protein Jerky',amount:2}},
+      {id:'pelvic',title:'🌸 Pelvic Floor 10 min',momTask:'Complete 10 min Kegel exercises (3×10 reps)',daughterTask:'Complete 10 min core training, remind mom to stay consistent',tips:'<span class="ex-tag safe">Pelvic Health</span><span class="ex-tag warm">Anytime</span> Kegels are critical for preventing incontinence and pelvic organ prolapse. Tighten for 5 sec → relax 5 sec, repeat 10× per set. Don't use abdominal or thigh muscles.',reward:{type:'toy',name:'🎀 Bow',amount:1}},
+      {id:'balance',title:'🦵 Balance & Flexibility 15 min',momTask:'Complete single-leg stands, heel-to-toe walking',daughterTask:'Face mom for a balance challenge, see who lasts longer',tips:'<span class="ex-tag safe">Fall Prevention</span><span class="ex-tag mood">Focus</span> Fall risk increases after menopause. Start with wall-assisted single-leg stands → gradually let go. Add tai chi or baduanjin movements.',reward:{type:'food',name:'🥛 Calcium Milk',amount:1}},
+      {id:'stretch',title:'🌿 Morning Stretch & Breathing 15 min',momTask:'After waking, complete 15 min full-body stretch + belly breathing',daughterTask:'Send mom a "Good Morning Stretch" reminder',tips:'<span class="ex-tag mood">Calm</span><span class="ex-tag warm">Wake Up</span> Morning stiffness is more pronounced during perimenopause. Start in bed — ankle circles, knee-to-chest, cat arch. Add 4-7-8 breathing (inhale 4s, hold 7s, exhale 8s) to lower cortisol.',reward:{type:'toy',name:'🪷 Lotus',amount:1}},
+      {id:'dance',title:'💃 Happy Dance 20 min',momTask:'Put on your favorite music and dance freely for 20 min',daughterTask:'Video call mom and dance together, or share a song',tips:'<span class="ex-tag mood">Dopamine</span><span class="ex-tag warm">Cardio</span> Dancing is the best "doesn't feel like exercise" exercise. Music + movement double-stimulates dopamine. No skills needed — just move. Pause during hot flashes, drink warm water.',reward:{type:'food',name:'🍯 Honey Drop',amount:2}},
+      {id:'swim',title:'🏊‍♀️ Water Exercise 25 min',momTask:'Swim or water walk for 25 min',daughterTask:'Join mom at the pool, or sync swim check-in remotely',tips:'<span class="ex-tag safe">Zero Impact</span><span class="ex-tag warm">Full Body</span> Water buoyancy removes 90% of body weight — gentlest on knees and spine. Ideal for perimenopausal women — cardio, strength, and flexibility all at once with no overheating risk.',reward:{type:'toy',name:'🐠 Starfish',amount:1}},
+    ],
+    meProfile: {name:'Susan Lee',desc:'Age 49 · Perimenopause · Bonded with daughter'},
+    meMenu: ['Health Profile','Blood Test Reports','Supplement Reminders','Notifications','Privacy & Data','About HEalthieR'],
+    meLangLabel: '🌐 Language / 语言',
+    nav: ['Companion','Report','Plan','Bond','Profile'],
+    logActions: {
+      taskDoneMom: ['✅','{name} completed 「{title}」'],
+      taskDoneDau: ['✅','{name} completed 「{title}」'],
+      bondLvlUp: ['⭐','Bond level up! Now Lv.{lvl}'],
+      bothDone: ['🎉','Mom & daughter completed today's tasks! Got {rewards}'],
+      fed: ['🍎','Fed NuanNuan some food, HP +15'],
+      played: ['🎾','Played with NuanNuan, HP +10'],
+      petted: ['✋','Petted NuanNuan, HP +2'],
+      petSick: ['💔','NuanNuan is sick… complete shared tasks to help her recover!'],
+      petHungry: ['🥺','NuanNuan is hungry… exercise to earn food!'],
+    }
+  }
+};
+window._lang = localStorage.getItem('healtheir_lang') || 'zh';
+var L = I18N[window._lang];
+
+function switchLang() {
+  window._lang = (window._lang === 'zh') ? 'en' : 'zh';
+  localStorage.setItem('healtheir_lang', window._lang);
+  L = I18N[window._lang];
+  applyLang();
+}
+function applyLang() {
+  // Status bar
+  var st = document.querySelector('.sb span:nth-child(2)');
+  if (st) st.textContent = L.statusTitle;
+
+  // Coach page
+  var pills = document.querySelectorAll('#pg-coach .pill');
+  L.coachScenes.forEach(function(t,i){ if(pills[i]) pills[i].textContent = t; });
+  var gname = document.querySelector('#pg-coach .gname'); if (gname) gname.textContent = L.coachGreeting.name;
+  var gtitle = document.querySelector('#pg-coach .gtitle'); if (gtitle) gtitle.innerHTML = L.coachGreeting.title;
+  var gsub = document.querySelector('#pg-coach .gsub'); if (gsub) gsub.textContent = L.coachGreeting.sub;
+  var chips = document.querySelectorAll('#pg-coach .tchip');
+  L.coachTopics.forEach(function(t,i){ if(chips[i]) chips[i].textContent = t; });
+  var mlbl = document.getElementById('mlbl'); if (mlbl) mlbl.textContent = L.coachMic;
+  var hist = document.querySelector('#pg-coach .hist');
+  if (hist) { hist.childNodes[hist.childNodes.length-1] && (hist.lastChild.textContent = L.coachHistory); }
+  var spkLbl = document.getElementById('spkLabel'); if (spkLbl) spkLbl.textContent = L.spkLabel;
+
+  // Update QA for coach
+  window.QA = L.coachQA;
+
+  // Report page
+  var rSec = document.querySelector('#pg-report .sec-title'); if (rSec) rSec.textContent = L.reportSec;
+  var rCards = document.querySelectorAll('#pg-report .card');
+  if (rCards.length >= 6) {
+    // Stats cards (first 4)
+    L.reportStats.forEach(function(s,i){
+      var c = rCards[i]; if (!c) return;
+      var t = c.querySelector('div:first-child'); if (t) t.textContent = s;
+    });
+    // Stat values + tags
+    var statVals = document.querySelectorAll('#pg-report .card span:first-of-type');
+    // Actually let's update more precisely
+  }
+  // Summary card
+  if (rCards.length >= 6) {
+    var sumTitle = rCards[5].querySelector('div:first-child'); if (sumTitle) sumTitle.textContent = L.reportSummaryTitle;
+    var sumText = rCards[5].querySelector('div:last-child'); if (sumText) sumText.textContent = L.reportSummary;
+  }
+
+  // Plan page
+  var pSecs = document.querySelectorAll('#pg-plan .sec-title');
+  if (pSecs[0]) pSecs[0].textContent = L.planSec1;
+  if (pSecs[1]) pSecs[1].textContent = L.planSec2;
+  var pItems = document.querySelectorAll('#pg-plan .plan-item');
+  var allPlanItems = L.planItems.concat(L.planNutri);
+  allPlanItems.forEach(function(pi,i){
+    var item = pItems[i]; if (!item) return;
+    var name = item.querySelector('.plan-name'); if (name) name.textContent = pi.name;
+    var sub = item.querySelector('.plan-sub'); if (sub) sub.textContent = pi.sub;
+    var time = item.querySelector('.plan-time'); if (time) time.textContent = pi.time;
+  });
+
+  // Bond page - pairing card
+  var bondedDiv = document.querySelector('#pg-bond .pair-card > div:first-child > div:first-child');
+  if (bondedDiv) bondedDiv.textContent = L.bondBonded;
+  var sinceDiv = document.querySelector('#pg-bond .pair-card div[style*="opacity:.4"]');
+  if (sinceDiv) sinceDiv.textContent = L.bondSince;
+  var cheerDivs = document.querySelectorAll('#pg-bond .pair-card > div');
+  if (cheerDivs[1]) {
+    var ct = cheerDivs[1].querySelector('div:first-child'); if (ct) ct.textContent = L.bondCheer;
+  }
+  var wciDiv = document.querySelector('#pg-bond .pair-card > div:last-child > div:first-child');
+  if (wciDiv) wciDiv.textContent = L.bondWeekCheckins;
+
+  // Bond page - pet header
+  var bhTitle = document.querySelector('#pg-bond .bond-title'); if (bhTitle) bhTitle.textContent = L.bondHeaderTitle;
+  var bhSub = document.querySelector('#pg-bond .bond-sub'); if (bhSub) bhSub.textContent = L.bondHeaderSub;
+
+  // Pet buttons
+  var bf = document.getElementById('btnFeed'); if (bf) bf.innerHTML = L.petFeed;
+  var bp = document.getElementById('btnPlay'); if (bp) bp.innerHTML = L.petPlay;
+
+  // Tips
+  var tipsHd = document.querySelector('#pg-bond .tips-hd'); if (tipsHd) tipsHd.textContent = L.tipsTitle;
+
+  // Log title
+  var logTitles = document.querySelectorAll('#pg-bond [style*="font-size:12px;font-weight:600"]');
+  logTitles.forEach(function(lt){
+    if (lt.textContent.indexOf('暖暖日记') !== -1 || lt.textContent.indexOf('NuanNuan') !== -1) {
+      lt.textContent = L.logTitle;
+    }
+  });
+
+  // Me page
+  var profName = document.querySelector('#pg-me [style*="font-size:16px"]'); if (profName) profName.textContent = L.meProfile.name;
+  var profDesc = document.querySelector('#pg-me [style*="opacity:.42"]'); if (profDesc) profDesc.textContent = L.meProfile.desc;
+  var menuTexts = document.querySelectorAll('#pg-me .menu-text');
+  var menuIdx = 0;
+  L.meMenu.forEach(function(m,i){
+    // Skip the language toggle (it's special)
+    var mt = menuTexts[menuIdx];
+    while (mt && mt.id === 'langLabel') { menuIdx++; mt = menuTexts[menuIdx]; }
+    if (mt) { mt.textContent = m; menuIdx++; }
+  });
+  var ll = document.getElementById('langLabel'); if (ll) ll.textContent = L.meLangLabel;
+
+  // Nav bar
+  var navs = document.querySelectorAll('.bnav .ni');
+  L.nav.forEach(function(n,i){
+    if (navs[i]) navs[i].childNodes[navs[i].childNodes.length-1].textContent = n;
+  });
+
+  // Re-render bond pet system
+  if (typeof exercisePool !== 'undefined') {
+    window.exercisePool = L.exercisePool;
+  }
+  if (typeof petState !== 'undefined' && petState.initialized) {
+    renderAllPet();
+    renderLogs();
+  }
+}
+
+// Override addLog to use i18n
+var origAddLog = addLog;
+addLog = function(emoji, text) {
+  return origAddLog.call(this, emoji, text);
+};
+
+// Apply language on init if not default
+if (window._lang !== 'zh') {
+  // Will be applied after DOM loads
+  document.addEventListener('DOMContentLoaded', function(){
+    // Apply after all init scripts run
+    setTimeout(applyLang, 100);
+  });
+}
+
 // ═══════════ BOND PET SYSTEM ═══════════
 const petState = {
   hp: 100, maxHp: 100,
@@ -594,7 +953,7 @@ const petState = {
   initialized: false
 };
 
-const exercisePool = [
+var exercisePool = (L && L.exercisePool) || [
   {
     id:'walk',title:'🏃‍♀️ 户外快走 30 分钟',
     momTask:'完成 30 分钟户外快走，记录心率',
@@ -828,7 +1187,7 @@ function addLog(emoji,text){
 }
 
 // Tips rotation
-const menopauseTips=[
+var menopauseTips = (L && L.tips) || [
   '更年期运动重在<span style="color:var(--brd);font-weight:500">持续而非强度</span>。每天20-30分钟的低冲击运动，比一次高强度更保护关节和骨骼。',
   '运动前<span style="color:var(--brd);font-weight:500">充分热身</span>很重要。雌激素下降让肌腱弹性变差，热身不足更容易拉伤。关节转圈+动态拉伸，至少5分钟。',
   '<span style="color:var(--brd);font-weight:500">潮热时暂停</span>，不要硬撑。穿分层透气的运动服，准备湿毛巾降温。潮热过去再继续，身体在告诉你它需要休息。',
