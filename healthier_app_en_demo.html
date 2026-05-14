@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEalthieR</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f0ebe3;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes bob-speak{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes ripple{0%{transform:scale(1);opacity:.45}100%{transform:scale(2.6);opacity:0}}
+@keyframes wave{0%,100%{height:var(--lo,4px)}50%{height:var(--hi,22px)}}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(243,154,142,.38)}60%{box-shadow:0 0 0 24px rgba(243,154,142,0)}}
+@keyframes tdot{0%,80%,100%{opacity:.18}40%{opacity:1}}
+@keyframes fadeup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+:root{--br:#F39A8E;--brd:#e07e70;--brlt:#fde8e3;--ac:#7DA06C;--tx:#3C2D26;--sf:#FDFBF7}
+
+.phone{width:390px;background:var(--sf);border-radius:44px;border:2.5px solid #e4ddd4;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.12)}
+.sb{height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 9px;font-size:13px;color:var(--tx);opacity:.38;font-weight:500}
+.page{display:none;animation:fadeup .25s ease}
+.page.on{display:block}
+
+.bnav{height:72px;border-top:1.5px solid #ece6de;display:flex;align-items:center;justify-content:space-around;background:var(--sf)}
+.ni{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--tx);opacity:.32;cursor:pointer;padding:4px 6px;transition:opacity .15s;letter-spacing:.01em;user-select:none;font-weight:500}
+.ni.on{color:var(--brd);opacity:1}
+.ni svg{width:26px;height:26px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+.scene-pills{display:flex;gap:8px;padding:12px 20px 4px;overflow-x:auto;scrollbar-width:none}
+.scene-pills::-webkit-scrollbar{display:none}
+.pill{flex-shrink:0;padding:8px 16px;border-radius:22px;font-size:14px;color:var(--tx);opacity:.46;border:1.5px solid #ddd7cd;cursor:pointer;transition:all .16s;user-select:none;font-weight:500}
+.pill.on{background:var(--brlt);color:var(--brd);border-color:var(--br);opacity:1;font-weight:600}
+
+.stage{height:200px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8px;position:relative;overflow:hidden;background:var(--sf)}
+.sdeco{position:absolute;inset:0;pointer-events:none}
+.char{position:relative;z-index:2;animation:bob 3.5s ease-in-out infinite}
+.char.spk{animation:bob-speak .7s ease-in-out infinite}
+.char.lst{animation:bob 2s ease-in-out infinite}
+.rring-wrap{position:absolute;width:90px;height:90px;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1;display:none}
+.rring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--br);animation:ripple 1.4s ease-out infinite}
+.rring:nth-child(2){animation-delay:.47s}.rring:nth-child(3){animation-delay:.94s}
+
+.greeting{padding:14px 26px 4px;text-align:center}
+.gname{font-size:14px;color:var(--brd);font-weight:600;letter-spacing:.04em;margin-bottom:6px}
+.gtitle{font-size:24px;font-weight:700;color:var(--tx);line-height:1.35;letter-spacing:-.01em}
+.gsub{font-size:15px;color:var(--tx);opacity:.4;margin-top:6px;font-weight:400}
+
+.bubble-area{min-height:90px;padding:8px 20px 2px;animation:fadeup .28s ease}
+.bubble{background:white;border:1.5px solid #ece6de;border-radius:20px;padding:14px 18px}
+.bname{font-size:11px;color:var(--brd);font-weight:700;letter-spacing:.1em;margin-bottom:5px}
+.btext{font-size:15px;color:var(--tx);line-height:1.75;opacity:.88}
+.tdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c8bdb5;margin:0 3px;animation:tdot .85s ease-in-out infinite}
+.tdot:nth-child(2){animation-delay:.18s}.tdot:nth-child(3){animation-delay:.36s}
+
+.topic-row{display:flex;gap:8px;padding:8px 20px 4px;overflow-x:auto;scrollbar-width:none}
+.topic-row::-webkit-scrollbar{display:none}
+.tchip{flex-shrink:0;padding:10px 16px;border-radius:16px;font-size:14px;color:var(--tx);opacity:.65;border:1.5px solid #ddd7cd;background:var(--sf);cursor:pointer;white-space:nowrap;transition:all .15s;user-select:none;font-weight:500}
+.tchip:hover,.tchip.playing{border-color:var(--br);color:var(--brd);opacity:1;background:var(--brlt)}
+
+.mic-area{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0 12px}
+.wave-row{height:36px;display:flex;align-items:center;gap:4px;opacity:0;transition:opacity .2s}
+.wave-row.on{opacity:1}
+.wbar{width:5px;border-radius:3px;background:var(--br);animation:wave .52s ease-in-out infinite}
+.mic-big{width:150px;height:150px;border-radius:50%;background:var(--br);border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:white;transition:transform .14s,background .14s;-webkit-tap-highlight-color:transparent;user-select:none}
+.mic-big:active,.mic-big.on{transform:scale(.93);background:var(--brd);animation:pulse-ring 1.1s ease-in-out infinite}
+.mic-big svg{width:50px;height:50px;stroke:white;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.mic-big-lbl{font-size:15px;letter-spacing:.02em;font-weight:500}
+
+.hist{display:flex;align-items:center;justify-content:center;gap:7px;padding:0 0 14px;font-size:14px;color:var(--tx);opacity:.35;cursor:pointer;font-weight:500}
+.hist svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* speaking indicator */
+.speaking-bar{display:flex;align-items:center;gap:6px;padding:4px 20px 0;opacity:0;transition:opacity .2s;height:28px}
+.speaking-bar.on{opacity:1}
+.speaking-bar span{font-size:12px;color:var(--brd);font-weight:600;letter-spacing:.04em}
+.sp-dot{width:6px;height:6px;border-radius:50%;background:var(--br);animation:tdot .6s ease-in-out infinite}
+.sp-dot:nth-child(2){animation-delay:.15s}.sp-dot:nth-child(3){animation-delay:.3s}
+
+.sec-title{font-size:20px;font-weight:700;color:var(--tx);padding:16px 20px 10px}
+.card{background:white;border:1.5px solid #ece6de;border-radius:18px;margin:0 20px 14px;padding:16px 18px}
+.tag{display:inline-block;padding:5px 13px;border-radius:12px;font-size:13px;font-weight:600}
+.tag-g{background:#eaf4e7;color:#3a6a2a}
+.tag-r{background:#fde8e3;color:#b85840}
+.tag-b{background:#e8f0fd;color:#2a4c90}
+.bar-chart{display:flex;align-items:flex-end;gap:7px;height:88px;margin-bottom:8px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.bar-fill{width:100%;border-radius:6px 6px 0 0;background:var(--br);opacity:.72}
+.bar-day{font-size:12px;color:var(--tx);opacity:.42;font-weight:500}
+.plan-item{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid #f0ebe3}
+.plan-item:last-child{border-bottom:none}
+.plan-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.plan-info{flex:1}
+.plan-name{font-size:15px;font-weight:600;color:var(--tx);margin-bottom:3px}
+.plan-sub{font-size:13px;color:var(--tx);opacity:.45}
+.plan-time{font-size:13px;color:var(--tx);opacity:.38;font-weight:500}
+.pair-card{margin:0 20px 14px;border:1.5px solid #ece6de;border-radius:18px;overflow:hidden;background:white}
+.avatar{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white;flex-shrink:0}
+.menu-item{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid #f5f0ea;cursor:pointer}
+.menu-item:last-child{border-bottom:none}
+.menu-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.menu-icon svg{width:20px;height:20px;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.menu-text{flex:1;font-size:16px;color:var(--tx);font-weight:500}
+.menu-arr{width:18px;height:18px;stroke:var(--tx);opacity:.22;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.profile-avatar{width:84px;height:84px;border-radius:50%;background:var(--br);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:white}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="sb">
+    <span>9:41</span>
+    <span style="font-size:13px;font-weight:700;opacity:.5;letter-spacing:.04em">HEalthieR</span>
+    <span>100%</span>
+  </div>
+
+  <!-- ══ COMPANION PAGE ══ -->
+  <div class="page on" id="pg-coach">
+    <div class="scene-pills">
+      <div class="pill on" onclick="setScene('move',this)">Workout</div>
+      <div class="pill" onclick="setScene('eat',this)">Nutrition</div>
+      <div class="pill" onclick="setScene('mind',this)">Mood</div>
+      <div class="pill" onclick="setScene('supp',this)">Supplements</div>
+    </div>
+
+    <div class="stage" id="stage">
+      <svg class="sdeco" id="sbg" width="390" height="200" viewBox="0 0 390 200">
+        <g id="bg-move">
+          <rect width="390" height="200" fill="#fdf6f3"/>
+          <rect x="0" y="172" width="390" height="28" fill="#fde8e3" opacity=".45"/>
+          <rect x="24" y="108" width="14" height="64" rx="4" fill="#F39A8E" opacity=".25"/>
+          <rect x="14" y="102" width="34" height="9" rx="4" fill="#F39A8E" opacity=".32"/>
+          <rect x="352" y="108" width="14" height="64" rx="4" fill="#F39A8E" opacity=".25"/>
+          <rect x="342" y="102" width="34" height="9" rx="4" fill="#F39A8E" opacity=".32"/>
+          <ellipse cx="195" cy="184" rx="138" ry="10" fill="#F39A8E" opacity=".1"/>
+          <text font-family="sans-serif" font-size="11" fill="#e07e70" opacity=".42" x="262" y="140">Heavy Lifting</text>
+          <text font-family="sans-serif" font-size="11" fill="#e07e70" opacity=".42" x="60" y="98">Sprint · SIT</text>
+        </g>
+        <g id="bg-eat" style="display:none">
+          <rect width="390" height="200" fill="#f4fbf7"/>
+          <circle cx="105" cy="142" r="28" fill="#7DA06C" opacity=".18"/>
+          <circle cx="195" cy="132" r="22" fill="#7DA06C" opacity=".13"/>
+          <circle cx="285" cy="144" r="26" fill="#7DA06C" opacity=".16"/>
+          <text font-family="sans-serif" font-size="11" fill="#4a7a3a" opacity=".42" x="50" y="96">Protein 30-40g</text>
+          <text font-family="sans-serif" font-size="11" fill="#4a7a3a" opacity=".42" x="226" y="96">Leucine Trigger</text>
+        </g>
+        <g id="bg-mind" style="display:none">
+          <rect width="390" height="200" fill="#fdf8fb"/>
+          <circle cx="60" cy="62" r="40" fill="#F39A8E" opacity=".09"/>
+          <circle cx="330" cy="76" r="28" fill="#F39A8E" opacity=".07"/>
+          <text font-family="sans-serif" font-size="11" fill="#c06878" opacity=".38" x="56" y="158">Cortisol Balance</text>
+          <text font-family="sans-serif" font-size="11" fill="#c06878" opacity=".38" x="222" y="108">Mood Journal</text>
+        </g>
+        <g id="bg-supp" style="display:none">
+          <rect width="390" height="200" fill="#f8f7fd"/>
+          <circle cx="60" cy="70" r="36" fill="#a89fdc" opacity=".09"/>
+          <rect x="296" y="122" width="60" height="32" rx="12" fill="#a89fdc" opacity=".16"/>
+          <text font-family="sans-serif" font-size="11" fill="#5248a0" opacity=".38" x="48" y="158">Creatine 5g / day</text>
+          <text font-family="sans-serif" font-size="11" fill="#5248a0" opacity=".38" x="220" y="104">Vit D3 + K2</text>
+        </g>
+      </svg>
+      <div class="rring-wrap" id="rrings"><div class="rring"></div><div class="rring"></div><div class="rring"></div></div>
+      <div class="char" id="char">
+        <svg width="104" height="156" viewBox="0 0 88 140">
+          <ellipse cx="44" cy="33" rx="25" ry="17" fill="#3C2D26"/>
+          <ellipse cx="22" cy="49" rx="8.5" ry="19" fill="#3C2D26"/>
+          <ellipse cx="66" cy="49" rx="8.5" ry="19" fill="#3C2D26"/>
+          <ellipse cx="36" cy="25" rx="6" ry="3" fill="#5a3f30" opacity=".5"/>
+          <ellipse cx="44" cy="55" rx="23" ry="25" fill="#FAEEDA"/>
+          <ellipse id="EL" cx="36" cy="51" rx="4.2" ry="5" fill="#3C2D26"/>
+          <ellipse id="ER" cx="52" cy="51" rx="4.2" ry="5" fill="#3C2D26"/>
+          <ellipse cx="37" cy="49" rx="1.6" ry="1.6" fill="white"/>
+          <ellipse cx="53" cy="49" rx="1.6" ry="1.6" fill="white"/>
+          <path d="M31 45 Q36 42 41 45" fill="none" stroke="#3C2D26" stroke-width="1.3" stroke-linecap="round"/>
+          <path d="M47 45 Q52 42 57 45" fill="none" stroke="#3C2D26" stroke-width="1.3" stroke-linecap="round"/>
+          <circle cx="44" cy="59" r="1.1" fill="#e8c8a0" opacity=".7"/>
+          <path id="MOUTH" d="M37 66 Q44 72 51 66" fill="none" stroke="#F39A8E" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="29" cy="61" rx="7" ry="5" fill="#F39A8E" opacity=".35"/>
+          <ellipse cx="59" cy="61" rx="7" ry="5" fill="#F39A8E" opacity=".35"/>
+          <rect x="18" y="79" width="52" height="53" rx="14" fill="white"/>
+          <rect x="18" y="79" width="52" height="53" rx="14" fill="none" stroke="#ede8e0" stroke-width=".8"/>
+          <path d="M29 79 L44 94 L59 79" fill="none" stroke="#ede8e0" stroke-width="1" stroke-linecap="round"/>
+          <path d="M29 79 L44 94 L59 79 Q53 81 44 83 Q35 81 29 79Z" fill="#fde8e3"/>
+          <rect x="48" y="93" width="15" height="10" rx="3" fill="none" stroke="#ede8e0" stroke-width=".7"/>
+          <rect x="4" y="83" width="16" height="10" rx="5" fill="white" stroke="#ede8e0" stroke-width=".8"/>
+          <rect x="68" y="83" width="16" height="10" rx="5" fill="white" stroke="#ede8e0" stroke-width=".8"/>
+          <rect x="26" y="128" width="13" height="10" rx="5" fill="#7DA06C"/>
+          <rect x="49" y="128" width="13" height="10" rx="5" fill="#7DA06C"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="greeting" id="greeting">
+      <div class="gname">Dr. Stacy</div>
+      <div class="gtitle">What can we do today<br>to brighten your life?</div>
+      <div class="gsub">Tell me — I'm here with you</div>
+    </div>
+    <div class="bubble-area" id="bubble-area" style="display:none">
+      <div class="bubble">
+        <div class="bname">DR. STACY</div>
+        <div class="btext" id="btext"></div>
+      </div>
+    </div>
+
+    <!-- speaking indicator -->
+    <div class="speaking-bar" id="spk-bar">
+      <div class="sp-dot"></div><div class="sp-dot"></div><div class="sp-dot"></div>
+      <span>Speaking…</span>
+    </div>
+
+    <div class="topic-row">
+      <div class="tchip" onclick="ask(0)">What to train today?</div>
+      <div class="tchip" onclick="ask(1)">I feel exhausted</div>
+      <div class="tchip" onclick="ask(2)">Post-workout meal?</div>
+      <div class="tchip" onclick="ask(3)">Feeling low today</div>
+      <div class="tchip" onclick="ask(4)">My supplement plan</div>
+    </div>
+
+    <div class="mic-area">
+      <div class="wave-row" id="wrow">
+        <div class="wbar" style="--lo:3px;--hi:9px;height:3px;animation-delay:0s"></div>
+        <div class="wbar" style="--lo:6px;--hi:20px;height:10px;animation-delay:.07s"></div>
+        <div class="wbar" style="--lo:9px;--hi:30px;height:18px;animation-delay:.14s"></div>
+        <div class="wbar" style="--lo:11px;--hi:36px;height:24px;animation-delay:.21s"></div>
+        <div class="wbar" style="--lo:9px;--hi:28px;height:22px;animation-delay:.28s"></div>
+        <div class="wbar" style="--lo:6px;--hi:20px;height:13px;animation-delay:.35s"></div>
+        <div class="wbar" style="--lo:3px;--hi:10px;height:5px;animation-delay:.42s"></div>
+      </div>
+      <button class="mic-big" id="mbtn"
+        onmousedown="startL()" onmouseup="stopL()"
+        ontouchstart="startL()" ontouchend="stopL()">
+        <svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+        <span class="mic-big-lbl" id="mlbl">Tap to Speak</span>
+      </button>
+    </div>
+    <div class="hist">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+      View Health History
+    </div>
+  </div>
+
+  <!-- ══ REPORT PAGE ══ -->
+  <div class="page" id="pg-report">
+    <div class="sec-title">Health Report</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px 14px">
+      <div class="card" style="margin:0">
+        <div style="font-size:13px;color:var(--tx);opacity:.45;font-weight:500">This Week</div>
+        <div style="margin-top:6px"><span style="font-size:36px;font-weight:700;color:var(--tx)">4</span><span style="font-size:15px;color:var(--tx);opacity:.45;margin-left:4px;font-weight:500">sessions</span></div>
+        <div style="margin-top:8px"><span class="tag tag-g">On Track</span></div>
+      </div>
+      <div class="card" style="margin:0">
+        <div style="font-size:13px;color:var(--tx);opacity:.45;font-weight:500">Protein Goal</div>
+        <div style="margin-top:6px"><span style="font-size:36px;font-weight:700;color:var(--tx)">86</span><span style="font-size:15px;color:var(--tx);opacity:.45;margin-left:4px;font-weight:500">%</span></div>
+        <div style="margin-top:8px"><span class="tag tag-g">Excellent</span></div>
+      </div>
+      <div class="card" style="margin:0">
+        <div style="font-size:13px;color:var(--tx);opacity:.45;font-weight:500">Avg. Sleep</div>
+        <div style="margin-top:6px"><span style="font-size:36px;font-weight:700;color:var(--tx)">6.8</span><span style="font-size:15px;color:var(--tx);opacity:.45;margin-left:4px;font-weight:500">hrs</span></div>
+        <div style="margin-top:8px"><span class="tag tag-r">Low</span></div>
+      </div>
+      <div class="card" style="margin:0">
+        <div style="font-size:13px;color:var(--tx);opacity:.45;font-weight:500">Mood Score</div>
+        <div style="margin-top:6px"><span style="font-size:36px;font-weight:700;color:var(--tx)">7.2</span><span style="font-size:15px;color:var(--tx);opacity:.45;margin-left:4px;font-weight:500">/10</span></div>
+        <div style="margin-top:8px"><span class="tag tag-b">Stable</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;color:var(--tx);opacity:.5;margin-bottom:12px;font-weight:600">Weekly Workout Intensity</div>
+      <div class="bar-chart">
+        <div class="bar-col"><div class="bar-fill" style="height:38px"></div><div class="bar-day">Mon</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:64px;background:#7DA06C"></div><div class="bar-day">Tue</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:20px;opacity:.3"></div><div class="bar-day">Wed</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:76px;opacity:1"></div><div class="bar-day">Thu</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:52px;background:#7DA06C"></div><div class="bar-day">Fri</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:16px;opacity:.3"></div><div class="bar-day">Sat</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:8px;opacity:.2"></div><div class="bar-day">Sun</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;color:var(--tx);opacity:.5;margin-bottom:10px;font-weight:600">Dr. Stacy's Weekly Note</div>
+      <div style="font-size:15px;color:#3C2D26;line-height:1.75;opacity:.85">Great training quality this week! Sleep is slightly low — try cutting caffeine after dinner and taking magnesium before bed. Keep up the excellent protein habit!</div>
+    </div>
+  </div>
+
+  <!-- ══ PLAN PAGE ══ -->
+  <div class="page" id="pg-plan">
+    <div class="sec-title">Weekly Plan</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="plan-item"><div class="plan-dot" style="background:#7DA06C"></div><div class="plan-info"><div class="plan-name">Heavy Squat + Deadlift</div><div class="plan-sub">3 sets × 5 reps · 85% 1RM</div></div><div class="plan-time">Mon</div></div>
+      <div class="plan-item"><div class="plan-dot" style="background:#F39A8E"></div><div class="plan-info"><div class="plan-name">SIT Sprint Intervals</div><div class="plan-sub">30 sec all-out × 5 sets · Bike</div></div><div class="plan-time">Wed</div></div>
+      <div class="plan-item"><div class="plan-dot" style="background:#7DA06C"></div><div class="plan-info"><div class="plan-name">Upper Body Push & Pull</div><div class="plan-sub">Bench · Row · Plank</div></div><div class="plan-time">Fri</div></div>
+      <div class="plan-item"><div class="plan-dot" style="background:#e0d5c5"></div><div class="plan-info"><div class="plan-name">Plyometrics + Stretch</div><div class="plan-sub">Bone density care · 15 min</div></div><div class="plan-time">Sat</div></div>
+    </div>
+    <div class="sec-title" style="padding-top:4px">Nutrition Plan</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="plan-item"><div class="plan-dot" style="background:#F39A8E"></div><div class="plan-info"><div class="plan-name">Post-Workout Protein Window</div><div class="plan-sub">Whey 30-40g · Within 45 min</div></div><div class="plan-time">Training days</div></div>
+      <div class="plan-item"><div class="plan-dot" style="background:#7DA06C"></div><div class="plan-info"><div class="plan-name">Evening Magnesium</div><div class="plan-sub">Glycinate 200mg · Sleep support</div></div><div class="plan-time">Nightly</div></div>
+    </div>
+  </div>
+
+  <!-- ══ BOND PAGE ══ -->
+  <div class="page" id="pg-bond">
+    <div class="sec-title">Mother & Daughter</div>
+    <div class="pair-card">
+      <div style="padding:16px 18px 12px;border-bottom:1px solid #f0ebe3">
+        <div style="font-size:13px;color:var(--tx);opacity:.42;margin-bottom:10px;font-weight:500">Bonded ✓</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="avatar" style="background:#F39A8E">M</div>
+          <svg width="18" height="18" viewBox="0 0 24 24" style="flex-shrink:0;opacity:.28" fill="#F39A8E" stroke="#F39A8E" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <div class="avatar" style="background:#7DA06C">D</div>
+          <div style="margin-left:6px">
+            <div style="font-size:16px;font-weight:600;color:#3C2D26">Susan &amp; Emma</div>
+            <div style="font-size:13px;color:#3C2D26;opacity:.4;margin-top:3px">Bonded since June 2024</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:14px 18px;border-bottom:1px solid #f0ebe3">
+        <div style="font-size:13px;color:var(--tx);opacity:.42;margin-bottom:10px;font-weight:500">Emma sent you a cheer today</div>
+        <div style="padding:14px 16px;background:var(--brlt);border-radius:16px;font-size:15px;color:var(--brd);line-height:1.7">Mom, did you do your squats today? I saw it on your plan — you've got this! I'll check in with you tonight! 💪</div>
+      </div>
+      <div style="padding:14px 18px">
+        <div style="font-size:13px;color:var(--tx);opacity:.42;margin-bottom:10px;font-weight:500">This week's check-ins</div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;text-align:center;background:#fde8e3;border-radius:12px;padding:10px 0"><div style="font-size:26px;font-weight:700;color:#e07e70">4</div><div style="font-size:13px;color:#e07e70;opacity:.85;margin-top:2px;font-weight:500">Mom</div></div>
+          <div style="flex:1;text-align:center;background:#eaf4e7;border-radius:12px;padding:10px 0"><div style="font-size:26px;font-weight:700;color:#3a6a2a">5</div><div style="font-size:13px;color:#3a6a2a;opacity:.85;margin-top:2px;font-weight:500">Emma</div></div>
+          <div style="flex:1;text-align:center;background:#f0ebe3;border-radius:12px;padding:10px 0"><div style="font-size:26px;font-weight:700;color:#7a6a5a">9</div><div style="font-size:13px;color:#7a6a5a;opacity:.85;margin-top:2px;font-weight:500">Total</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:16px;font-weight:600;color:#3C2D26;margin-bottom:12px">This Week's Shared Goals</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:22px;height:22px;border-radius:50%;background:#7DA06C;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span style="font-size:15px;color:#3C2D26;opacity:.8">Review today's blood test together</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:22px;height:22px;border-radius:50%;background:#7DA06C;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span style="font-size:15px;color:#3C2D26;opacity:.8">Send each other a daily encouragement</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:22px;height:22px;border-radius:50%;border:2px solid #ddd7cd;flex-shrink:0"></div>
+          <span style="font-size:15px;color:#3C2D26;opacity:.45">Sunday chat: how to hit protein goals</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PROFILE PAGE ══ -->
+  <div class="page" id="pg-me">
+    <div style="display:flex;flex-direction:column;align-items:center;padding:22px 20px 14px;gap:10px">
+      <div class="profile-avatar">S</div>
+      <div style="font-size:22px;font-weight:700;color:var(--tx)">Susan Lee</div>
+      <div style="font-size:14px;color:var(--tx);opacity:.42;font-weight:400">Age 49 · Perimenopause · Bonded with daughter</div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#fde8e3"><svg viewBox="0 0 24 24" stroke="#e07e70"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <div class="menu-text">Health Profile</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#fde8e3"><svg viewBox="0 0 24 24" stroke="#e07e70"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg></div>
+        <div class="menu-text">Blood Test Reports</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#eaf4e7"><svg viewBox="0 0 24 24" stroke="#4a7a3a"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg></div>
+        <div class="menu-text">Supplement Reminders</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#eaf4e7"><svg viewBox="0 0 24 24" stroke="#4a7a3a"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+        <div class="menu-text">Notifications</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#f0ebe3"><svg viewBox="0 0 24 24" stroke="#8a7a6a"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="menu-text">Privacy &amp; Data</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon" style="background:#f0ebe3"><svg viewBox="0 0 24 24" stroke="#8a7a6a"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div class="menu-text">About HEalthieR</div>
+        <svg class="menu-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BOTTOM NAV ══ -->
+  <div class="bnav">
+    <div class="ni on" onclick="goPage('coach',this)">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Companion
+    </div>
+    <div class="ni" onclick="goPage('report',this)">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Report
+    </div>
+    <div class="ni" onclick="goPage('plan',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Plan
+    </div>
+    <div class="ni" onclick="goPage('bond',this)">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Bond
+    </div>
+    <div class="ni" onclick="goPage('me',this)">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Pre-recorded TTS responses using Web Speech API (no API key needed) ──
+// Falls back gracefully if browser doesn't support it
+
+const QA = [
+  {
+    sc:'move',
+    text:"Today is perfect for heavy squats! After menopause, muscle-building signals weaken. You need 85 percent of your max weight — the kind you can only lift 1 to 5 times — to truly wake up your neuromuscular system. Heavy weights are your best medicine right now!",
+    display:"Today is perfect for heavy squats! After menopause, muscle-building signals weaken. You need 85% of your max — weights you can only lift 1–5 times — to wake up your neuromuscular system. Heavy weights are your best medicine right now!"
+  },
+  {
+    sc:'mind',
+    text:"Fatigue is your body speaking — first, listen to it. A gentle 10-minute stretch and a warm cup of ginger tea can do wonders. Not every day needs to be a sprint. Sometimes, being tender with yourself is the greatest source of energy.",
+    display:"Fatigue is your body speaking — first, listen to it. A gentle 10-min stretch and warm ginger tea can do wonders. Not every day needs to be a sprint. Sometimes, being tender with yourself is the greatest source of energy."
+  },
+  {
+    sc:'eat',
+    text:"The 45 minutes after your workout is your golden window! You need 30 to 40 grams of leucine-rich protein to flip on the muscle-building switch. Whey protein or Greek yogurt — take it immediately. Do not wait!",
+    display:"The 45 minutes after your workout is your golden window! You need 30–40g of leucine-rich protein to flip on the muscle-building switch. Whey protein or Greek yogurt — take it immediately. Don't wait!"
+  },
+  {
+    sc:'mind',
+    text:"Feeling low is completely normal — estrogen fluctuations directly impact your emotional center. Try 10 minutes of outdoor sunshine, then write down 3 things you feel grateful for, however small. You are already doing something remarkable.",
+    display:"Feeling low is completely normal — estrogen fluctuations directly affect mood. Try 10 minutes of outdoor sunshine, then write down 3 things you're grateful for. You are already doing something remarkable."
+  },
+  {
+    sc:'supp',
+    text:"Take Vitamin D3 and K2 with breakfast to protect your bones and arteries. Take 5 grams of creatine monohydrate any time of day — it clears brain fog and sharpens cognition. Then 200 milligrams of magnesium glycinate at dinner for deeper sleep. These three are your best investment.",
+    display:"Take Vit D3 + K2 with breakfast for bones & arteries. Take 5g creatine any time — it clears brain fog and sharpens cognition. Then 200mg magnesium glycinate at dinner for deeper sleep. These three are your best investment."
+  },
+];
+
+const SC={move:{bg:'#fdf6f3',d:'bg-move'},eat:{bg:'#f4fbf7',d:'bg-eat'},mind:{bg:'#fdf8fb',d:'bg-mind'},supp:{bg:'#f8f7fd',d:'bg-supp'}};
+let mT, tT, cst='idle', currentUtter=null;
+
+// Web Speech API setup
+const synth = window.speechSynthesis;
+
+function speak(text, onEnd) {
+  if (!synth) { onEnd && onEnd(); return; }
+  synth.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.92;
+  utter.pitch = 1.05;
+  utter.volume = 1;
+  // prefer a female English voice
+  const voices = synth.getVoices();
+  const preferred = voices.find(v =>
+    /female|woman|samantha|victoria|karen|moira|tessa|fiona|allison|ava/i.test(v.name)
+  ) || voices.find(v => /en[-_]US|en[-_]GB/i.test(v.lang)) || voices[0];
+  if (preferred) utter.voice = preferred;
+  utter.onend = () => { onEnd && onEnd(); };
+  utter.onerror = () => { onEnd && onEnd(); };
+  currentUtter = utter;
+  synth.speak(utter);
+}
+
+function stopSpeech() {
+  if (synth) synth.cancel();
+}
+
+function goPage(n,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pg-'+n).classList.add('on');
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+}
+
+function setScene(n,el){
+  if(el){document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));el.classList.add('on');}
+  const s=SC[n]||SC.move;
+  document.getElementById('stage').style.background=s.bg;
+  ['bg-move','bg-eat','bg-mind','bg-supp'].forEach(id=>{
+    const g=document.getElementById(id);
+    if(g)g.style.display=id===s.d?'':'none';
+  });
+}
+
+function setChar(s){
+  cst=s;
+  const ch=document.getElementById('char');
+  ch.className='char'+(s==='spk'?' spk':s==='lst'?' lst':'');
+  document.getElementById('rrings').style.display=s==='spk'?'block':'none';
+  document.getElementById('wrow').classList.toggle('on',s==='lst');
+  document.getElementById('mbtn').classList.toggle('on',s==='lst');
+  document.getElementById('spk-bar').classList.toggle('on',s==='spk');
+}
+
+function setMouth(o){
+  const m=document.getElementById('MOUTH');
+  if(o){m.setAttribute('d','M36 64 Q44 77 52 64');m.setAttribute('fill','#F39A8E');}
+  else{m.setAttribute('d','M37 66 Q44 72 51 66');m.setAttribute('fill','none');}
+}
+
+function showGreeting(s){
+  document.getElementById('greeting').style.display=s?'':'none';
+  document.getElementById('bubble-area').style.display=s?'none':'';
+}
+
+function ask(i){
+  stopSpeech();
+  const qa=QA[i];
+  setScene(qa.sc,null);
+  showGreeting(false);
+  document.getElementById('btext').innerHTML='<span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>';
+  setChar('idle');
+  clearInterval(mT); clearInterval(tT);
+
+  setTimeout(()=>{
+    setChar('spk');
+    document.getElementById('btext').textContent='';
+
+    // mouth animation
+    let o=false;
+    mT=setInterval(()=>{o=!o;setMouth(o);},160);
+
+    // typewriter text
+    const txt=qa.display; let idx=0;
+    tT=setInterval(()=>{
+      if(idx>=txt.length){ clearInterval(tT); return; }
+      document.getElementById('btext').textContent+=txt[idx++];
+    },28);
+
+    // Web Speech TTS
+    speak(qa.text, ()=>{
+      clearInterval(mT); clearInterval(tT);
+      setMouth(false); setChar('idle');
+      document.getElementById('btext').textContent=qa.display;
+    });
+
+    // fallback: stop mouth after estimated duration
+    const fallbackMs = qa.text.length * 58;
+    setTimeout(()=>{
+      if(cst==='spk'){
+        clearInterval(mT); clearInterval(tT);
+        setMouth(false); setChar('idle');
+        document.getElementById('btext').textContent=qa.display;
+      }
+    }, fallbackMs);
+
+  }, 750);
+}
+
+function startL(){
+  stopSpeech();
+  setChar('lst');
+  document.getElementById('mlbl').textContent='Listening…';
+  showGreeting(false);
+  document.getElementById('btext').textContent='Tell me what\'s on your mind…';
+}
+function stopL(){
+  document.getElementById('mlbl').textContent='Tap to Speak';
+  ask(Math.floor(Math.random()*QA.length));
+}
+
+// blink
+setInterval(()=>{
+  if(cst!=='idle')return;
+  const el=document.getElementById('EL'),er=document.getElementById('ER');
+  if(!el)return;
+  el.setAttribute('ry','.3');er.setAttribute('ry','.3');
+  setTimeout(()=>{el.setAttribute('ry','5');er.setAttribute('ry','5');},120);
+},4500);
+
+// load voices on ready
+if(synth && synth.onvoiceschanged !== undefined){
+  synth.onvoiceschanged = ()=>{ synth.getVoices(); };
+}
+</script>
+</body>
+</html>
