@@ -918,18 +918,14 @@ function applyLang() {
   // Re-render bond pet system
   if (typeof exercisePool !== 'undefined') {
     window.exercisePool = L.exercisePool;
-  }
-  if (typeof petState !== 'undefined' && petState.initialized) {
-    renderAllPet();
-    renderLogs();
+    window.menopauseTips = L.tips;
+    if (typeof petState !== 'undefined' && petState.initialized) {
+      pickNewTasks();
+      renderAllPet();
+      renderLogs();
+    }
   }
 }
-
-// Override addLog to use i18n
-var origAddLog = addLog;
-addLog = function(emoji, text) {
-  return origAddLog.call(this, emoji, text);
-};
 
 // Apply language on init if not default
 if (window._lang !== 'zh') {
